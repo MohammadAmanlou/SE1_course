@@ -277,7 +277,7 @@ public class OrderHandlerTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 100, 10, shareholder.getShareholderId(), 10,0));
         assertThat(broker.getCredit()).isEqualTo(10_000-30*100);
-    }///
+    }
 
     @Test
     void credit_does_not_change_on_invalid_new_order() {
