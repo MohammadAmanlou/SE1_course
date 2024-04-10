@@ -83,7 +83,7 @@ public class MEQTest {
     }
 
 @Test
-    void less_than_zero_EQ() {
+    void negative_MEQ() {
         Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
         brokerRepository.addBroker(broker1);
         Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
@@ -94,4 +94,18 @@ public class MEQTest {
         assertThat(broker1.getCredit()).isEqualTo(100_000);
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_NEGATIVE)));
     }
+    @Test
+    void quantity_less_than_MEQ() {
+        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
+        brokerRepository.addBroker(broker1);
+        Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        security.getOrderBook().enqueue(order);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,100));
+
+        assertThat(broker1.getCredit()).isEqualTo(100_000);
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY)));
+    }
+    
+   
 }
