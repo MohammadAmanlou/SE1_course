@@ -215,5 +215,26 @@ public class MEQTest {
         verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
     }
 
+    @Test
+    void new_Iceberg_order_from_buyer_matching_all_MEQ() { 
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_500).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+        Order matchingBuyOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
+        Order matchingBuyOrder2 = new Order(110, security, Side.SELL, 20, 400, broker2, shareholder,0);
+        security.getOrderBook().enqueue(matchingBuyOrder1);
+        security.getOrderBook().enqueue(matchingBuyOrder2);
+     
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 50,10));
+
+        assertThat(broker1.getCredit()).isEqualTo(115000 );
+        assertThat(broker2.getCredit()).isEqualTo(108000 );
+        assertThat(broker3.getCredit()).isEqualTo(470000);
+
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
+    }
+
 
 }
