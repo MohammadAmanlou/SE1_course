@@ -70,8 +70,8 @@ public class OrderHandlerTest {
     }
     @Test
     void new_order_matched_completely_with_one_trade() {
-        Order matchingBuyOrder = new Order(100, security, Side.BUY, 1000, 15500, broker1, shareholder);
-        Order incomingSellOrder = new Order(200, security, Side.SELL, 300, 15450, broker2, shareholder);
+        Order matchingBuyOrder = new Order(100, security, Side.BUY, 1000, 15500, broker1, shareholder,0);
+        Order incomingSellOrder = new Order(200, security, Side.SELL, 300, 15450, broker2, shareholder,0);
         security.getOrderBook().enqueue(matchingBuyOrder);
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.SELL, 300, 15450, 2, shareholder.getShareholderId(), 0, 0));
@@ -247,7 +247,7 @@ public class OrderHandlerTest {
     void invalid_delete_with_order_id_not_found() {
         Broker buyBroker = Broker.builder().credit(1_000_000).build();
         brokerRepository.addBroker(buyBroker);
-        Order queuedOrder = new Order(200, security, Side.BUY, 1000, 15500, buyBroker, shareholder);
+        Order queuedOrder = new Order(200, security, Side.BUY, 1000, 15500, buyBroker, shareholder,0);
         security.getOrderBook().enqueue(queuedOrder);
         orderHandler.handleDeleteOrder(new DeleteOrderRq(1, "ABC", Side.SELL, 100));
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.ORDER_ID_NOT_FOUND)));
@@ -256,7 +256,7 @@ public class OrderHandlerTest {
 
     @Test
     void invalid_delete_order_with_non_existing_security() {
-        Order queuedOrder = new Order(200, security, Side.BUY, 1000, 15500, broker1, shareholder);
+        Order queuedOrder = new Order(200, security, Side.BUY, 1000, 15500, broker1, shareholder,0);
         security.getOrderBook().enqueue(queuedOrder);
         orderHandler.handleDeleteOrder(new DeleteOrderRq(1, "XXX", Side.SELL, 200));
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.UNKNOWN_SECURITY_ISIN)));
@@ -266,7 +266,7 @@ public class OrderHandlerTest {
     void buyers_credit_decreases_on_new_order_without_trades() {
         Broker broker = Broker.builder().brokerId(10).credit(10_000).build();
         brokerRepository.addBroker(broker);
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 100, 10, shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 100, 10, shareholder.getShareholderId(), 0,0));
         assertThat(broker.getCredit()).isEqualTo(10_000-30*100);
     }
 
@@ -275,7 +275,7 @@ public class OrderHandlerTest {
         Broker broker = Broker.builder().brokerId(10).credit(10_000).build();
         brokerRepository.addBroker(broker);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 100, 10, shareholder.getShareholderId(), 10));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 100, 10, shareholder.getShareholderId(), 10,0));
         assertThat(broker.getCredit()).isEqualTo(10_000-30*100);
     }
 
@@ -284,7 +284,7 @@ public class OrderHandlerTest {
         Broker broker = Broker.builder().brokerId(10).credit(10_000).build();
         brokerRepository.addBroker(broker);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", -1, LocalDateTime.now(), Side.BUY, 30, 100, broker.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", -1, LocalDateTime.now(), Side.BUY, 30, 100, broker.getBrokerId(), shareholder.getShareholderId(), 0,0));
         assertThat(broker.getCredit()).isEqualTo(10_000);
     }
 
@@ -295,12 +295,12 @@ public class OrderHandlerTest {
         Broker broker3 = Broker.builder().brokerId(30).credit(100_000).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
 
-        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder);
-        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 500, broker2, shareholder);
+        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 500, broker2, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 + 30*500);
         assertThat(broker2.getCredit()).isEqualTo(100_000 + 20*500);
@@ -312,7 +312,7 @@ public class OrderHandlerTest {
         Broker broker = Broker.builder().brokerId(10).credit(1000).build();
         brokerRepository.addBroker(broker);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 100, 10, shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 100, 10, shareholder.getShareholderId(), 0,0));
         assertThat(broker.getCredit()).isEqualTo(1000);
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
     }
@@ -323,9 +323,9 @@ public class OrderHandlerTest {
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
         Broker broker3 = Broker.builder().brokerId(30).credit(52_500).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
-        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder);
-        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 500, broker2, shareholder);
-        Order incomingBuyOrder = new Order(200, security, Side.BUY, 100, 550, broker3, shareholder);
+        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 500, broker2, shareholder,0);
+        Order incomingBuyOrder = new Order(200, security, Side.BUY, 100, 550, broker3, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
         Trade trade1 = new Trade(security, matchingSellOrder1.getPrice(), matchingSellOrder1.getQuantity(),
@@ -333,7 +333,7 @@ public class OrderHandlerTest {
         Trade trade2 = new Trade(security, matchingSellOrder2.getPrice(), matchingSellOrder2.getQuantity(),
                 incomingBuyOrder.snapshotWithQuantity(700), matchingSellOrder2);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 + 30*500);
         assertThat(broker2.getCredit()).isEqualTo(100_000 + 20*500);
@@ -349,12 +349,12 @@ public class OrderHandlerTest {
         Broker broker2 = Broker.builder().brokerId(2).credit(100_000).build();
         Broker broker3 = Broker.builder().brokerId(3).credit(50_000).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
-        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder);
-        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 500, broker2, shareholder);
+        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 500, broker2, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000);
         assertThat(broker2.getCredit()).isEqualTo(100_000);
@@ -367,10 +367,10 @@ public class OrderHandlerTest {
     void update_buy_order_changing_price_with_no_trades_changes_buyers_credit() {
         Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
         brokerRepository.addBroker(broker1);
-        Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder);
+        Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
         security.getOrderBook().enqueue(order);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 - 1_500);
     }
@@ -378,10 +378,10 @@ public class OrderHandlerTest {
     void update_sell_order_changing_price_with_no_trades_does_not_changes_sellers_credit() {
         Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
         brokerRepository.addBroker(broker1);
-        Order order = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder);
+        Order order = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
         security.getOrderBook().enqueue(order);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.SELL, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.SELL, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000);
     }
@@ -393,15 +393,15 @@ public class OrderHandlerTest {
         Broker broker3 = Broker.builder().brokerId(30).credit(100_000).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 2, LocalDateTime.now(), Side.BUY, 500, 590, broker3.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 2, LocalDateTime.now(), Side.BUY, 500, 590, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 + 350*580);
         assertThat(broker2.getCredit()).isEqualTo(100_000 + 100*581);
@@ -415,17 +415,17 @@ public class OrderHandlerTest {
         Broker broker3 = Broker.builder().brokerId(30).credit(54_000).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
         Order originalOrder = orders.get(1).snapshot();
         originalOrder.queue();
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 2, LocalDateTime.now(), Side.BUY, 500, 590, broker3.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 2, LocalDateTime.now(), Side.BUY, 500, 590, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000);
         assertThat(broker2.getCredit()).isEqualTo(100_000);
@@ -440,15 +440,15 @@ public class OrderHandlerTest {
         Broker broker3 = Broker.builder().brokerId(30).credit(100_000).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 2, LocalDateTime.now(), Side.BUY, 400, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 2, LocalDateTime.now(), Side.BUY, 400, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000);
         assertThat(broker2.getCredit()).isEqualTo(100_000);
@@ -458,17 +458,17 @@ public class OrderHandlerTest {
     @Test
     void new_sell_order_without_enough_positions_is_rejected() {
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
         shareholder.decPosition(security, 99_500);
         broker3.increaseCreditBy(100_000_000);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.SELL, 400, 590, broker1.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.SELL, 400, 590, broker1.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
     }
@@ -476,17 +476,17 @@ public class OrderHandlerTest {
     @Test
     void update_sell_order_without_enough_positions_is_rejected() {
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
         shareholder.decPosition(security, 99_500);
         broker3.increaseCreditBy(100_000_000);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 6, LocalDateTime.now(), Side.SELL, 450, 580, broker1.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 6, LocalDateTime.now(), Side.SELL, 450, 580, broker1.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 6, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
     }
@@ -497,17 +497,17 @@ public class OrderHandlerTest {
         shareholder1.incPosition(security, 100_000);
         shareholderRepository.addShareholder(shareholder1);
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder1),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder1),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder1),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder1,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder1,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder1,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
         shareholder.decPosition(security, 99_500);
         broker3.increaseCreditBy(100_000_000);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 6, LocalDateTime.now(), Side.SELL, 250, 570, broker1.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 6, LocalDateTime.now(), Side.SELL, 250, 570, broker1.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         verify(eventPublisher).publish(any(OrderExecutedEvent.class));
         assertThat(shareholder1.hasEnoughPositionsOn(security, 100_000 + 250)).isTrue();
@@ -520,17 +520,17 @@ public class OrderHandlerTest {
         shareholder1.incPosition(security, 100_000);
         shareholderRepository.addShareholder(shareholder1);
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder1),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder1),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder1),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder1,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder1,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder1,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
         shareholder.decPosition(security, 99_500);
         broker3.increaseCreditBy(100_000_000);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 500, 570, broker3.getBrokerId(), shareholder.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 500, 570, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
 
         verify(eventPublisher).publish(any(OrderAcceptedEvent.class));
         assertThat(shareholder1.hasEnoughPositionsOn(security, 100_000)).isTrue();
@@ -543,17 +543,17 @@ public class OrderHandlerTest {
         shareholder1.incPosition(security, 100_000);
         shareholderRepository.addShareholder(shareholder1);
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder1),
-                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder1),
-                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder1),
-                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder),
-                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder)
+                new Order(1, security, Side.BUY, 304, 570, broker3, shareholder1,0),
+                new Order(2, security, Side.BUY, 430, 550, broker3, shareholder1,0),
+                new Order(3, security, Side.BUY, 445, 545, broker3, shareholder1,0),
+                new Order(6, security, Side.SELL, 350, 580, broker1, shareholder,0),
+                new Order(7, security, Side.SELL, 100, 581, broker2, shareholder,0)
         );
         orders.forEach(order -> security.getOrderBook().enqueue(order));
         shareholder.decPosition(security, 99_500);
         broker3.increaseCreditBy(100_000_000);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 3, LocalDateTime.now(), Side.BUY, 500, 545, broker3.getBrokerId(), shareholder1.getShareholderId(), 0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 3, LocalDateTime.now(), Side.BUY, 500, 545, broker3.getBrokerId(), shareholder1.getShareholderId(), 0,0));
 
         verify(eventPublisher).publish(any(OrderAcceptedEvent.class));
         assertThat(shareholder1.hasEnoughPositionsOn(security, 100_000)).isTrue();

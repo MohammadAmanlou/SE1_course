@@ -136,8 +136,8 @@ public class DataLoader {
                     Security security = securityRepository.findSecurityByIsin(line[1]);
                     Broker broker = brokerRepository.findBrokerById(Long.parseLong(line[5]));
                     Shareholder shareholder = shareholderRepository.findShareholderById(Long.parseLong(line[6]));
-//orderId,isin,side,quantity,price,brokerId,shareholderId,entryTime,peakSize,displayedQuantity
-//0       1    2    3        4     5        6             7         8        9
+//orderId,isin,side,quantity,price,brokerId,shareholderId,entryTime,peakSize,displayedQuantity, meq
+//0       1    2    3        4     5        6             7         8        9                  10
                     int peakSize = Integer.parseInt(line[8]);
                     Order order;
                     if (peakSize == 0) {
@@ -150,7 +150,8 @@ public class DataLoader {
                                 broker,
                                 shareholder,
                                 LocalDateTime.parse(line[7]),
-                                OrderStatus.QUEUED);
+                                OrderStatus.QUEUED,
+                                Integer.parseInt(line[8]));
                     } else {
                         order = new IcebergOrder(
                                 Long.parseLong(line[0]),
@@ -163,7 +164,8 @@ public class DataLoader {
                                 LocalDateTime.parse(line[7]),
                                 Integer.parseInt(line[8]),
                                 Integer.parseInt(line[9]),
-                                OrderStatus.QUEUED);
+                                OrderStatus.QUEUED,
+                                Integer.parseInt(line[10]));
                     }
                     orders.addFirst(order);
                 }
