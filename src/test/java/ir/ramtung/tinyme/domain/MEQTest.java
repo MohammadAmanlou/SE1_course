@@ -82,5 +82,16 @@ public class MEQTest {
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY)));
     }
 
+@Test
+    void less_than_zero_EQ() {
+        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
+        brokerRepository.addBroker(broker1);
+        Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        security.getOrderBook().enqueue(order);
 
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,-2));
+
+        assertThat(broker1.getCredit()).isEqualTo(100_000);
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_NEGATIVE)));
+    }
 }
