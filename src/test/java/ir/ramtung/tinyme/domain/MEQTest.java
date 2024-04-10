@@ -162,6 +162,7 @@ public class MEQTest {
 
     verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES)));
     }   
+    
 
     @Test
     void new_sell_order_matched_completely_with_one_trade() {
