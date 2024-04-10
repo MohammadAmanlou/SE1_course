@@ -98,10 +98,10 @@ public class Matcher {
     }
 
     private boolean matchBasedOnMinimumExecutionQuantity(Order newOrder, LinkedList<Trade> trades) {
-        int sumOfTradeQuantities = calculateSumOfTradeQuantities()
+        int sumOfTradeQuantities = calculateSumOfTradeQuantities(trades);
         if (newOrder.getMinimumExecutionQuantity() > sumOfTradeQuantities){
-            rollbackBuyTrades();
-            rollbackSellTrades();
+            rollbackBuyTrades(newOrder, trades);
+            rollbackSellTrades(newOrder, trades);
             return false;
         }
         else
