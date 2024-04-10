@@ -108,47 +108,59 @@ public class MEQTest {
     }
 
     @Test
-    void new_order_from_buyer_with_enough_credit_based_on_trades() { //new_order_from_buyer_with_enough_credit_based_on_trades
+    void new_order_from_buyer_matching_all_MEQ() { //new_order_from_buyer_with_enough_credit_based_on_trades
         Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
-        Broker broker3 = Broker.builder().brokerId(30).credit(52_500).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_500).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
-        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,100);
-        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 500, broker2, shareholder,0);
-        Order incomingBuyOrder = new Order(200, security, Side.BUY, 100, 550, broker3, shareholder,0);
+        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker2, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
      
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 100, 550, broker3.getBrokerId(), shareholder.getShareholderId(), 0,0));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 100, 950, broker3.getBrokerId(), shareholder.getShareholderId(), 0,10));
 
-        assertThat(broker1.getCredit()).isEqualTo(100_000 + 30*500);
-        assertThat(broker2.getCredit()).isEqualTo(100_000 + 20*500);
-        assertThat(broker3.getCredit()).isEqualTo(0);
+        assertThat(broker1.getCredit()).isEqualTo(115000 );
+        assertThat(broker2.getCredit()).isEqualTo(108_000 );
+        assertThat(broker3.getCredit()).isEqualTo(450000);
 
         verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
     }
 
-  /*   @Test
-    void new_buy_order_matched_with_one_trade() {//
-        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
-        brokerRepository.addBroker(broker1);
-        Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
-        security.getOrderBook().enqueue(order);
+    @Test
+    void new_order_from_buyer_matching_part_of_MEQ() { //new_order_from_buyer_with_enough_credit_based_on_trades
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_500).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker2, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+     
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 200, 950, broker3.getBrokerId(), shareholder.getShareholderId(), 0,100));
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,10));
+        assertThat(broker1.getCredit()).isEqualTo(100_000 );
+        assertThat(broker2.getCredit()).isEqualTo(100_000 );
+        assertThat(broker3.getCredit()).isEqualTo(520_500);
 
-        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 100));
-    }   */
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES)));
+
+    }
+
     @Test
     void new_buy_order_not_matched_with_one_trade() {
         Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
         brokerRepository.addBroker(broker1);
-        Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        Order order = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
         security.getOrderBook().enqueue(order);
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,16000));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+        Side.BUY, 50, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,40));
 
-    verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY)));
+    verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES)));
     }   
 
     @Test
@@ -176,4 +188,6 @@ public class MEQTest {
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY)));
     
     }
+
+
 }

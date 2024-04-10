@@ -77,6 +77,8 @@ public class Matcher {
         MatchResult result = match(order);
         if (result.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT)
             return result;
+        if (result.outcome() == MatchingOutcome.NOT_ENOUGH_QUANTITIES_MATCHED)
+            return result;
 
         if (result.remainder().getQuantity() > 0) {
             if (order.getSide() == Side.BUY) {
@@ -100,8 +102,14 @@ public class Matcher {
     private boolean matchBasedOnMinimumExecutionQuantity(Order newOrder, LinkedList<Trade> trades) {
         int sumOfTradeQuantities = calculateSumOfTradeQuantities(trades);
         if (newOrder.getMinimumExecutionQuantity() > sumOfTradeQuantities){
-            rollbackBuyTrades(newOrder, trades);
-            rollbackSellTrades(newOrder, trades);
+            if (newOrder.getSide() == Side.SELL){
+                rollbackSellTrades(newOrder, trades);
+            }
+            else if (newOrder.getSide() == Side.BUY){
+                rollbackBuyTrades(newOrder, trades);
+            }
+            
+            
             return false;
         }
         else
