@@ -206,7 +206,7 @@ public class MEQTest {
         security.getOrderBook().enqueue(matchingBuyOrder2);
      
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
-        Side.SELL, 100, 350, broker3.getBrokerId(), shareholder.getShareholderId(), 10,10));
+        Side.SELL, 100, 350, broker3.getBrokerId(), shareholder.getShareholderId(), 8,10));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 );
         assertThat(broker2.getCredit()).isEqualTo(100_000 );
@@ -235,6 +235,36 @@ public class MEQTest {
 
         verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
     }
+
+    @Test
+    void new_sell_iceberg_order_matched_completely_with_one_trade_fail() {
+        Order matchingBuyOrder = new Order(100, security, Side.BUY, 1000, 15500, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingBuyOrder);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.SELL, 
+        300, 15450, 2, shareholder.getShareholderId(), 50, 400));
+
+        assertThat(broker1.getCredit()).isEqualTo(0 );
+        assertThat(broker2.getCredit()).isEqualTo(0 );
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY)));
+    
+    }
+
+    @Test
+    void new_buy_iceberg_order_not_matched_with_one_trade() {
+        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
+        brokerRepository.addBroker(broker1);
+        Order order = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        security.getOrderBook().enqueue(order);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+        Side.BUY, 50, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 10,40));
+
+        assertThat(broker1.getCredit()).isEqualTo(100_000 );
+        assertThat(broker2.getCredit()).isEqualTo(0 );
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES)));
+    } 
+
 
 
 }
