@@ -10,6 +10,7 @@ import java.util.ListIterator;
 public class OrderBook {
     private final LinkedList<Order> buyQueue;
     private final LinkedList<Order> sellQueue;
+    private int lastTradePrice ;
 
     public OrderBook() {
         buyQueue = new LinkedList<>();
