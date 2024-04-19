@@ -95,6 +95,7 @@ public class OrderHandler {
             errors.add(Message.STOP_LIMIT_ORDER_CANT_ICEBERG);
         if ((enterOrderRq.getStopPrice() != 0) &&  (enterOrderRq.getMinimumExecutionQuantity() != 0))
             errors.add(Message.STOP_LIMIT_ORDER_CANT_MEQ);
+        
     
         Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
         if (security == null)

@@ -26,7 +26,7 @@ public class stopLimitOrder extends Order {
     }
 
     public stopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, int stopPrice, int minimumExecutionQuantity) {
-        super(orderId, security, side, quantity, price, broker, shareholder, 0);
+        super(orderId, security, side, quantity, price, broker, shareholder, minimumExecutionQuantity);
         this.stopPrice = stopPrice;
         this.isActive = false ; 
     }
@@ -52,6 +52,14 @@ public class stopLimitOrder extends Order {
     //     quantity -= amount;
     //     displayedQuantity -= amount;
     // }
+
+    @Override
+    public void queue() {
+        if (isActive)
+            super.queue();
+        else 
+            return ;
+    }
 
     // @Override
     // public void updateFromRequest(EnterOrderRq updateOrderRq) {
