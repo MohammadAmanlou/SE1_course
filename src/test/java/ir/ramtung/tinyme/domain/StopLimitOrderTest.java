@@ -124,6 +124,30 @@ public class StopLimitOrderTest {
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.STOP_LIMIT_ORDER_CANT_MEQ)));
     }
 
+    @Test
+    void m() { //new_order_from_buyer_with_enough_credit_based_on_trades
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_500).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+     
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 600));
+
+
+
+        assertThat(broker1.getCredit()).isEqualTo(115000 );
+        assertThat(broker2.getCredit()).isEqualTo(108_000 );
+        assertThat(broker3.getCredit()).isEqualTo(450000);
+
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
+    }
+
 
     
 
@@ -143,7 +167,7 @@ public class StopLimitOrderTest {
 
 
 
-    
+
 
 
 @Test
