@@ -62,6 +62,15 @@ public class OrderBook {
         }
         stopLimitOrder.queue();
         it.add(stopLimitOrder);
+
+        ListIterator<StopLimitOrder> it2 = activeStopLimitOrders.listIterator();
+        while (it2.hasNext()) {
+            if (stopLimitOrder.queuesBefore(it2.next())) {
+                it2.previous();
+                break;
+            }
+        }
+        it2.add(stopLimitOrder);
     }
     
 
@@ -136,20 +145,20 @@ public class OrderBook {
         this.lastTradePrice = lastTradePrice;
     }
 
-    public List<Order> activateStopLimitOrders() {
+    public List<StopLimitOrder> activateStopLimitOrders() {
 
-        List<Order> activatedOrders = new ArrayList<>();
+        List<StopLimitOrder> activatedOrders = new ArrayList<>();
         LinkedList<StopLimitOrder>  inactiveStopLimitOrders = new LinkedList<>();
         inactiveStopLimitOrders.addAll(inactiveSellStopLimitOrders);
         inactiveStopLimitOrders.addAll(inactiveBuyStopLimitOrders);
         for (ListIterator<StopLimitOrder> it = inactiveStopLimitOrders.listIterator(); it.hasNext(); ) {
             StopLimitOrder order = it.next();
-            if (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL ||
-                    order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY) {
+            if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL) ||
+                    (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
                 it.remove();
-                activeStopLimitOrders.add(order);
-                activatedOrders.add(order);
+                stopLimitOrderEnqueue(order);
                 order.setIsActive(true);
+                
             }
         }
 
