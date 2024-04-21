@@ -11,8 +11,11 @@ import java.util.ListIterator;
 public class OrderBook {
     private final LinkedList<Order> buyQueue;
     private final LinkedList<Order> sellQueue;
-    private LinkedList<Order> activeStopLimitOrders;
-    private LinkedList<Order> inactiveStopLimitOrders;
+    private LinkedList<StopLimitOrder> activeStopLimitOrders;
+    private LinkedList<StopLimitOrder> inactiveStopLimitOrders;
+    private LinkedList<StopLimitOrder> inactiveBuyStopLimitOrders;
+    private LinkedList<StopLimitOrder> inactiveSellStopLimitOrders;
+
 
     private double lastTradePrice;
 
@@ -21,7 +24,8 @@ public class OrderBook {
         sellQueue = new LinkedList<>();
         activeStopLimitOrders = new LinkedList<>();
         inactiveStopLimitOrders = new LinkedList<>();
-
+        inactiveBuyStopLimitOrders = new LinkedList<>();
+        inactiveSellStopLimitOrders = new LinkedList<>();
     }
 
     public void enqueue(Order order) {
@@ -35,6 +39,17 @@ public class OrderBook {
         }
         order.queue();
         it.add(order);
+    }
+
+    public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
+        List<StopLimitOrder> queue = getStopLimitOrderQueue() ///base khabam miad
+    }
+
+    private LinkedList<StopLimitOrder> getStopLimitOrderQueue(Side side, boolean isActive){ //if it is needed to check the stopPrice add it to arguments
+        if(side == Side.BUY && !isActive)
+            return inactiveBuyStopLimitOrders;
+        if(side == Side.SELL && !isActive)
+            return inactiveSellStopLimitOrders;
     }
 
     private LinkedList<Order> getQueue(Side side) {
