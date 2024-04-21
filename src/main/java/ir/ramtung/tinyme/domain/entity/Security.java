@@ -10,6 +10,9 @@ import lombok.Getter;
 
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.commons.lang3.ObjectUtils.Null;
+
 import java.util.ArrayList;
 
 @Getter
@@ -23,7 +26,8 @@ public class Security {
     @Builder.Default
     private OrderBook orderBook = new OrderBook();
     //private double lastTradePrice;
-    private List<MatchResult> matchResults = new ArrayList<>();
+    @Builder.Default
+    private ArrayList<MatchResult> matchResults = new ArrayList<>();
 
     public List<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
 
@@ -37,6 +41,7 @@ public class Security {
         if (enterOrderRq.getSide() == Side.BUY && (enterOrderRq.getStopPrice() > 0)) {
             broker.decreaseCreditBy(orderValue);
             if(broker.getCredit() < 0){
+                broker.increaseCreditBy(orderValue);
                 matchResults.add(MatchResult.notEnoughCredit());
                 return matchResults;
             }
@@ -48,16 +53,17 @@ public class Security {
             order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder, enterOrderRq.getEntryTime(), enterOrderRq.getMinimumExecutionQuantity());
 
-        else if (enterOrderRq.getStopPrice() != 0)
+        else if (enterOrderRq.getStopPrice() != 0){
+            broker.increaseCreditBy(orderValue);
             order = new StopLimitOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getStopPrice() );
+        }
         else 
             order = new IcebergOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(), enterOrderRq.getMinimumExecutionQuantity());
 
-        broker.increaseCreditBy(orderValue);
         MatchResult matchResult = matcher.execute(order);
 
         if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
