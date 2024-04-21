@@ -24,13 +24,13 @@ public class Security {
     //private double lastTradePrice;
     private List<MatchResult> matchResults = new ArrayList<>();
 
-    public List<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
+    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
 
         if (enterOrderRq.getSide() == Side.SELL &&
                 !shareholder.hasEnoughPositionsOn(this,
                         orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity())) {
             matchResults.add(MatchResult.notEnoughPositions());
-            return matchResults;
+            return MatchResult.notEnoughPositions();
         }
 
         Order order;
@@ -40,7 +40,7 @@ public class Security {
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder, enterOrderRq.getEntryTime(), enterOrderRq.getMinimumExecutionQuantity());
 
         else if (enterOrderRq.getStopPrice() != 0)
-            order = new stopLimitOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
+            order = new StopLimitOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getStopPrice() );
         else 
@@ -58,7 +58,7 @@ public class Security {
 
         matchResults.add(matchResult);
 
-        return matchResults;
+        return matchResult;
 
     }
 
@@ -71,7 +71,7 @@ public class Security {
         orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
     }
 
-    public List<MatchResult> updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
+    public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         Order order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
         if (order == null)
             throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
@@ -87,7 +87,7 @@ public class Security {
                 !order.getShareholder().hasEnoughPositionsOn(this,
                         orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())) {
             matchResults.add(MatchResult.notEnoughPositions());
-            return matchResults;
+            return MatchResult.notEnoughPositions();
         }
 
         boolean losesPriority = order.isQuantityIncreased(updateOrderRq.getQuantity())
@@ -117,21 +117,23 @@ public class Security {
             }
         }
         matchResults.add(MatchResult.notEnoughPositions());
-        return matchResults;
+        return matchResult;
     }
-}
 
-public void processActivatedStopLimitOrders(Matcher matcher) {
-    List<Order>activatedOrders = orderBook.activateStopLimitOrders();
-    for (Order activatedOrder : activatedOrders) {
-        //convert the stop limit order to order?
-
-
-        MatchResult matchResult = matcher.execute(newOrder);
-        matchResults.add(matchResult);
-
-        if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
-            orderBook.setLastTradePrice(matchResult.getPrice());
+    public void processActivatedStopLimitOrders(Matcher matcher) {
+        List<Order>activatedOrders = orderBook.activateStopLimitOrders();
+        for (Order activatedOrder : activatedOrders) {
+            //convert the stop limit order to order?
+    
+            MatchResult matchResult = matcher.execute(activatedOrder);
+            matchResults.add(matchResult);
+    
+            if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
+                orderBook.setLastTradePrice(matchResult.getPrice());
+            }
         }
     }
+    
+
 }
+

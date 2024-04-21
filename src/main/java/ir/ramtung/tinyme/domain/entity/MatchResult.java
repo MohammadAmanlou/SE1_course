@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+
 public final class MatchResult {
     private final MatchingOutcome outcome;
     private final Order remainder;
@@ -60,5 +61,8 @@ public final class MatchResult {
                 "trades=" + trades + ']';
     }
 
+    public double getPrice(){
+        return trades.getLast().getPrice();
+    }
 
 }

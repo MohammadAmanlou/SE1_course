@@ -3,29 +3,31 @@ package ir.ramtung.tinyme.domain.entity;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
 
+@Setter
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class stopLimitOrder extends Order {
+public class StopLimitOrder extends Order {
     int stopPrice ; 
     Boolean isActive ;
 
-    public stopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, int stopPrice, OrderStatus status) {
+    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, int stopPrice, OrderStatus status) {
         super(orderId, security, side, quantity, price, broker, shareholder, entryTime, status , 0);
         this.stopPrice = stopPrice;
         this.isActive = false ; 
     }
 
-    public stopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, int stopPrice) {
+    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, int stopPrice) {
         this(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.NEW);
         this.isActive = false ; 
     }
 
-    public stopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, int stopPrice, int minimumExecutionQuantity) {
+    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, int stopPrice, int minimumExecutionQuantity) {
         super(orderId, security, side, quantity, price, broker, shareholder, minimumExecutionQuantity);
         this.stopPrice = stopPrice;
         this.isActive = false ; 
@@ -33,12 +35,12 @@ public class stopLimitOrder extends Order {
 
     @Override
     public Order snapshot() {
-        return new stopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
     }
 
     @Override
     public Order snapshotWithQuantity(int newQuantity) {
-        return new stopLimitOrder(orderId, security, side, newQuantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
+        return new StopLimitOrder(orderId, security, side, newQuantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
     }
 
     // @Override
@@ -64,11 +66,12 @@ public class stopLimitOrder extends Order {
     @Override
     public boolean queuesBefore(Order order) {
         if (order.getSide() == Side.BUY) {
-            return price > order.getStopPrice();
-        } else {
-            return price < order.getStopPrice();
+            return price > stopPrice;
+        } 
+        else {
+            return price < stopPrice;
         }
-    }
+    } // Handling equality situation
 
     // @Override
     // public void updateFromRequest(EnterOrderRq updateOrderRq) {

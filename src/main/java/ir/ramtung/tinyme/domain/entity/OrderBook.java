@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
+import org.apache.commons.lang3.ObjectUtils.Null;
+
 @Getter
 public class OrderBook {
     private final LinkedList<Order> buyQueue;
@@ -41,16 +43,20 @@ public class OrderBook {
         it.add(order);
     }
 
-    public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
-        List<StopLimitOrder> queue = getStopLimitOrderQueue() ///base khabam miad
-    }
+    // public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
+    //     List<StopLimitOrder> queue = getStopLimitOrderQueue() ///base khabam miad
+    // }
 
-    private LinkedList<StopLimitOrder> getStopLimitOrderQueue(Side side, boolean isActive){ //if it is needed to check the stopPrice add it to arguments
-        if(side == Side.BUY && !isActive)
+    private LinkedList<StopLimitOrder> getStopLimitOrderQueue(Side side, boolean isActive) {
+        if (side == Side.BUY && !isActive)
             return inactiveBuyStopLimitOrders;
-        if(side == Side.SELL && !isActive)
+        if (side == Side.SELL && !isActive)
             return inactiveSellStopLimitOrders;
+    
+        // If none of the conditions match, return null or an empty list, depending on your requirement
+        return null; // Or return new LinkedList<StopLimitOrder>(); if you prefer an empty list
     }
+    
 
     private LinkedList<Order> getQueue(Side side) {
         return side == Side.BUY ? buyQueue : sellQueue;
@@ -123,13 +129,14 @@ public class OrderBook {
 
         List<Order> activatedOrders = new ArrayList<>();
 
-        for (ListIterator<Order> it = inactiveStopLimitOrders.listIterator(); it.hasNext(); ) {
-            Order order = it.next();
+        for (ListIterator<StopLimitOrder> it = inactiveStopLimitOrders.listIterator(); it.hasNext(); ) {
+            StopLimitOrder order = it.next();
             if (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL ||
                     order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY) {
                 it.remove();
                 activeStopLimitOrders.add(order);
                 activatedOrders.add(order);
+                order.setIsActive(true);
             }
         }
 
