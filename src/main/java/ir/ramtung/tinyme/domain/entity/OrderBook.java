@@ -10,11 +10,17 @@ import java.util.ListIterator;
 public class OrderBook {
     private final LinkedList<Order> buyQueue;
     private final LinkedList<Order> sellQueue;
-    private int lastTradePrice ;
+    private LinkedList<Order> activeStopLimitOrders;
+    private LinkedList<Order> inactiveStopLimitOrders;
+
+    private double lastTradePrice;
 
     public OrderBook() {
         buyQueue = new LinkedList<>();
         sellQueue = new LinkedList<>();
+        activeStopLimitOrders = new LinkedList<>();
+        inactiveStopLimitOrders = new LinkedList<>();
+
     }
 
     public void enqueue(Order order) {
@@ -91,5 +97,20 @@ public class OrderBook {
                 .filter(order -> order.getShareholder().equals(shareholder))
                 .mapToInt(Order::getTotalQuantity)
                 .sum();
+    }
+
+    public void setLastTradePrice(double lastTradePrice) {
+        this.lastTradePrice = lastTradePrice;
+    }
+
+    public void activateStopLimitOrders() {
+        for (ListIterator<Order> it = inactiveStopLimitOrders.listIterator(); it.hasNext(); ) {
+            Order order = it.next();
+            if (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL ||
+                    order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY) {
+                it.remove();
+                activeStopLimitOrders.add(order);
+            }
+        }
     }
 }

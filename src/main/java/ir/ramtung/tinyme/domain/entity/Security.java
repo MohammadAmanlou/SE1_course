@@ -21,7 +21,7 @@ public class Security {
     private int lotSize = 1;
     @Builder.Default
     private OrderBook orderBook = new OrderBook();
-    private double lastTradePrice;
+    //private double lastTradePrice;
     private List<MatchResult> matchResults = new ArrayList<>();
 
     public List<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
@@ -52,7 +52,7 @@ public class Security {
         MatchResult matchResult = matcher.execute(order);
 
         if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
-            setLastTradePrice(matchResult.getPrice());
+            orderBook.setLastTradePrice(matchResult.getPrice());
         }
 
         matchResults.add(matchResult);
@@ -119,11 +119,4 @@ public class Security {
         return matchResults;
     }
 
-    public double getLastTradePrice() {
-        return lastTradePrice;
-    }
-
-    public void setLastTradePrice(double lastTradePrice) {
-        this.lastTradePrice = lastTradePrice;
-    }
 }
