@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Getter
 @Builder
@@ -20,16 +21,24 @@ public class Security {
     private int lotSize = 1;
     @Builder.Default
     private OrderBook orderBook = new OrderBook();
+    private double lastTradePrice;
+    private List<MatchResult> matchResults = new ArrayList<>();
 
-    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
+    public List<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
+
         if (enterOrderRq.getSide() == Side.SELL &&
                 !shareholder.hasEnoughPositionsOn(this,
-                orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity()))
-            return MatchResult.notEnoughPositions();
+                        orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity())) {
+            matchResults.add(MatchResult.notEnoughPositions());
+            return matchResults;
+        }
+
         Order order;
+
         if ((enterOrderRq.getPeakSize() == 0) && (enterOrderRq.getStopPrice() == 0))
             order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder, enterOrderRq.getEntryTime(), enterOrderRq.getMinimumExecutionQuantity());
+
         else if (enterOrderRq.getStopPrice() != 0)
             order = new stopLimitOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
@@ -40,7 +49,16 @@ public class Security {
                     enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(), enterOrderRq.getMinimumExecutionQuantity());
 
 
-        return matcher.execute(order);
+        MatchResult matchResult = matcher.execute(order);
+
+        if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
+            setLastTradePrice(matchResult.getPrice());
+        }
+
+        matchResults.add(matchResult);
+
+        return matchResults;
+
     }
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
@@ -52,7 +70,7 @@ public class Security {
         orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
     }
 
-    public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
+    public List<MatchResult> updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         Order order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
         if (order == null)
             throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
@@ -66,8 +84,10 @@ public class Security {
 
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
-                orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity()))
-            return MatchResult.notEnoughPositions();
+                        orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())) {
+            matchResults.add(MatchResult.notEnoughPositions());
+            return matchResults;
+        }
 
         boolean losesPriority = order.isQuantityIncreased(updateOrderRq.getQuantity())
                 || updateOrderRq.getPrice() != order.getPrice()
@@ -82,7 +102,7 @@ public class Security {
             if (updateOrderRq.getSide() == Side.BUY) {
                 order.getBroker().decreaseCreditBy(order.getValue());
             }
-            return MatchResult.executed(null, List.of());
+            matchResults.add(MatchResult.executed(null, List.of())); //check
         }
         else
             order.markAsNew();
@@ -95,6 +115,15 @@ public class Security {
                 originalOrder.getBroker().decreaseCreditBy(originalOrder.getValue());
             }
         }
-        return matchResult;
+        matchResults.add(MatchResult.notEnoughPositions());
+        return matchResults;
+    }
+
+    public double getLastTradePrice() {
+        return lastTradePrice;
+    }
+
+    public void setLastTradePrice(double lastTradePrice) {
+        this.lastTradePrice = lastTradePrice;
     }
 }
