@@ -32,6 +32,14 @@ public class Security {
             matchResults.add(MatchResult.notEnoughPositions());
             return matchResults;
         }
+        long orderValue = enterOrderRq.getPrice() * enterOrderRq.getQuantity();
+        if (enterOrderRq.getSide() == Side.BUY && (enterOrderRq.getStopPrice() > 0)) {
+            broker.decreaseCreditBy(orderValue);
+            if(broker.getCredit() < 0){
+                matchResults.add(MatchResult.notEnoughCredit());
+                return matchResults;
+            }
+        }
 
         Order order;
 
@@ -48,7 +56,7 @@ public class Security {
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(), enterOrderRq.getMinimumExecutionQuantity());
 
-
+        broker.increaseCreditBy(orderValue);
         MatchResult matchResult = matcher.execute(order);
 
         if (matchResult.outcome() == MatchingOutcome.EXECUTED) {

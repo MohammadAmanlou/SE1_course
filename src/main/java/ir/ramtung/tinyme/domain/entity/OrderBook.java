@@ -122,10 +122,14 @@ public class OrderBook {
     }
 
     public int totalSellQuantityByShareholder(Shareholder shareholder) {
-        return sellQueue.stream()
+        return (sellQueue.stream()
                 .filter(order -> order.getShareholder().equals(shareholder))
                 .mapToInt(Order::getTotalQuantity)
-                .sum();
+                .sum() + 
+                inactiveSellStopLimitOrders.stream()
+                .filter(order -> order.getShareholder().equals(shareholder))
+                .mapToInt(Order::getTotalQuantity)
+                .sum());
     }
 
     public void setLastTradePrice(double lastTradePrice) {
