@@ -52,7 +52,16 @@ public class OrderBook {
     }
 
     public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
-        List<StopLimitOrder> queue = getStopLimitOrderQueue(stopLimitOrder.getSide() , stopLimitOrder.getIsActive()); ///base khabam miad
+        List<StopLimitOrder> queue = getStopLimitOrderQueue(stopLimitOrder.getSide() , stopLimitOrder.getIsActive()); 
+        ListIterator<StopLimitOrder> it = queue.listIterator();
+        while (it.hasNext()) {
+            if (stopLimitOrder.queuesBefore(it.next())) {
+                it.previous();
+                break;
+            }
+        }
+        stopLimitOrder.queue();
+        it.add(stopLimitOrder);
     }
     
 
