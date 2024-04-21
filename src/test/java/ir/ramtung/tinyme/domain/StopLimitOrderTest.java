@@ -79,6 +79,73 @@ public class StopLimitOrderTest {
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER)));
     }
 
+    @Test
+    void updating_peakSize_for_StopLimit_order() {
+        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
+        brokerRepository.addBroker(broker1);
+        Order order = new StopLimitOrder(100, security, Side.BUY, 30, 500, broker1, shareholder,
+         10 , 0 );
+        security.getOrderBook().enqueue(order);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550,
+         broker1.getBrokerId(), shareholder.getShareholderId(), 10, 0 , 10));
+
+        assertThat(broker1.getCredit()).isEqualTo(100_000);
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.STOP_LIMIT_ORDER_CANT_ICEBERG)));
+    }
+
+    @Test
+    void updating_MEQ_for_StopLimit_order() {
+        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
+        brokerRepository.addBroker(broker1);
+        Order order = new StopLimitOrder(100, security, Side.BUY, 30, 500, broker1, shareholder,
+         10 , 0 );
+        security.getOrderBook().enqueue(order);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550,
+         broker1.getBrokerId(), shareholder.getShareholderId(), 0, 10 , 10));
+
+        assertThat(broker1.getCredit()).isEqualTo(100_000);
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.STOP_LIMIT_ORDER_CANT_MEQ)));
+    }
+
+    @Test
+    void MEQ_for_StopLimit_order() {
+        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
+        brokerRepository.addBroker(broker1);
+        Order order = new StopLimitOrder(100, security, Side.BUY, 30, 500, broker1, shareholder,
+         10 , 10);
+        security.getOrderBook().enqueue(order);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 550,
+        broker1.getBrokerId(), shareholder.getShareholderId(), 0, 10 , 10));
+
+        assertThat(broker1.getCredit()).isEqualTo(100_000);
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.STOP_LIMIT_ORDER_CANT_MEQ)));
+    }
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
 @Test
     void negative_MEQ() {
         Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
