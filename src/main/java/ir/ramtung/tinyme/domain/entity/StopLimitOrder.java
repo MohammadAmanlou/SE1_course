@@ -66,7 +66,7 @@ public class StopLimitOrder extends Order {
     @Override
     public boolean queuesBefore(Order order) {
         if (order.getSide() == Side.BUY) {
-            return price > stopPrice;
+            return price >= stopPrice;
         } 
         else {
             return price < stopPrice;

@@ -14,7 +14,6 @@ public class OrderBook {
     private final LinkedList<Order> buyQueue;
     private final LinkedList<Order> sellQueue;
     private LinkedList<StopLimitOrder> activeStopLimitOrders;
-    private LinkedList<StopLimitOrder> inactiveStopLimitOrders;
     private LinkedList<StopLimitOrder> inactiveBuyStopLimitOrders;
     private LinkedList<StopLimitOrder> inactiveSellStopLimitOrders;
 
@@ -25,7 +24,6 @@ public class OrderBook {
         buyQueue = new LinkedList<>();
         sellQueue = new LinkedList<>();
         activeStopLimitOrders = new LinkedList<>();
-        inactiveStopLimitOrders = new LinkedList<>();
         inactiveBuyStopLimitOrders = new LinkedList<>();
         inactiveSellStopLimitOrders = new LinkedList<>();
     }
@@ -43,10 +41,6 @@ public class OrderBook {
         it.add(order);
     }
 
-    // public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
-    //     List<StopLimitOrder> queue = getStopLimitOrderQueue() ///base khabam miad
-    // }
-
     private LinkedList<StopLimitOrder> getStopLimitOrderQueue(Side side, boolean isActive) {
         if (side == Side.BUY && !isActive)
             return inactiveBuyStopLimitOrders;
@@ -54,7 +48,11 @@ public class OrderBook {
             return inactiveSellStopLimitOrders;
     
         // If none of the conditions match, return null or an empty list, depending on your requirement
-        return null; // Or return new LinkedList<StopLimitOrder>(); if you prefer an empty list
+        return new LinkedList<StopLimitOrder>(); // Or return new LinkedList<StopLimitOrder>(); if you prefer an empty list
+    }
+
+    public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
+        List<StopLimitOrder> queue = getStopLimitOrderQueue(stopLimitOrder.getSide() , stopLimitOrder.getIsActive()); ///base khabam miad
     }
     
 
@@ -128,7 +126,9 @@ public class OrderBook {
     public List<Order> activateStopLimitOrders() {
 
         List<Order> activatedOrders = new ArrayList<>();
-
+        LinkedList<StopLimitOrder>  inactiveStopLimitOrders = new LinkedList<>();
+        inactiveStopLimitOrders.addAll(inactiveSellStopLimitOrders);
+        inactiveStopLimitOrders.addAll(inactiveBuyStopLimitOrders);
         for (ListIterator<StopLimitOrder> it = inactiveStopLimitOrders.listIterator(); it.hasNext(); ) {
             StopLimitOrder order = it.next();
             if (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL ||
@@ -142,4 +142,6 @@ public class OrderBook {
 
         return activatedOrders;
     }
+
+    
 }

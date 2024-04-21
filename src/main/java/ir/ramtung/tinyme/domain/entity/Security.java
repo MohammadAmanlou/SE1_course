@@ -24,13 +24,13 @@ public class Security {
     //private double lastTradePrice;
     private List<MatchResult> matchResults = new ArrayList<>();
 
-    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
+    public List<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
 
         if (enterOrderRq.getSide() == Side.SELL &&
                 !shareholder.hasEnoughPositionsOn(this,
                         orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity())) {
             matchResults.add(MatchResult.notEnoughPositions());
-            return MatchResult.notEnoughPositions();
+            return matchResults;
         }
 
         Order order;
@@ -58,7 +58,7 @@ public class Security {
 
         matchResults.add(matchResult);
 
-        return matchResult;
+        return matchResults;
 
     }
 
@@ -71,7 +71,7 @@ public class Security {
         orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
     }
 
-    public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
+    public List<MatchResult> updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         Order order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
         if (order == null)
             throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
@@ -79,7 +79,24 @@ public class Security {
             throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
         if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
             throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
-        
+
+        if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() > 0 && order.getSide() == Side.SELL){
+
+            //add to deactive queue sell
+        }
+
+        else if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() > 0 && order.getSide() == Side.BUY){
+
+            //add to deactive queue sell
+        }
+
+        if ((order instanceof StopLimitOrder) && ((StopLimitOrder) order).getIsActive() == true){ //
+            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE);
+        }
+
+        if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() == 0) 
+        throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
+
         if (order.getMinimumExecutionQuantity() != updateOrderRq.getMinimumExecutionQuantity())
             throw new InvalidRequestException(Message.CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY);
 
@@ -87,7 +104,7 @@ public class Security {
                 !order.getShareholder().hasEnoughPositionsOn(this,
                         orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())) {
             matchResults.add(MatchResult.notEnoughPositions());
-            return MatchResult.notEnoughPositions();
+            return matchResults;
         }
 
         boolean losesPriority = order.isQuantityIncreased(updateOrderRq.getQuantity())
@@ -117,7 +134,7 @@ public class Security {
             }
         }
         matchResults.add(MatchResult.notEnoughPositions());
-        return matchResult;
+        return matchResults;
     }
 
     public void processActivatedStopLimitOrders(Matcher matcher) {
