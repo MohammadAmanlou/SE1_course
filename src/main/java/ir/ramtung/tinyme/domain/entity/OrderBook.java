@@ -2,6 +2,7 @@ package ir.ramtung.tinyme.domain.entity;
 
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -103,14 +104,20 @@ public class OrderBook {
         this.lastTradePrice = lastTradePrice;
     }
 
-    public void activateStopLimitOrders() {
+    public List<Order> activateStopLimitOrders() {
+
+        List<Order> activatedOrders = new ArrayList<>();
+
         for (ListIterator<Order> it = inactiveStopLimitOrders.listIterator(); it.hasNext(); ) {
             Order order = it.next();
             if (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL ||
                     order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY) {
                 it.remove();
                 activeStopLimitOrders.add(order);
+                activatedOrders.add(order);
             }
         }
+
+        return activatedOrders;
     }
 }

@@ -53,6 +53,7 @@ public class Security {
 
         if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
             orderBook.setLastTradePrice(matchResult.getPrice());
+            processActivatedStopLimitOrders(matcher);
         }
 
         matchResults.add(matchResult);
@@ -118,5 +119,19 @@ public class Security {
         matchResults.add(MatchResult.notEnoughPositions());
         return matchResults;
     }
+}
 
+public void processActivatedStopLimitOrders(Matcher matcher) {
+    List<Order>activatedOrders = orderBook.activateStopLimitOrders();
+    for (Order activatedOrder : activatedOrders) {
+        //convert the stop limit order to order?
+
+
+        MatchResult matchResult = matcher.execute(newOrder);
+        matchResults.add(matchResult);
+
+        if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
+            orderBook.setLastTradePrice(matchResult.getPrice());
+        }
+    }
 }
