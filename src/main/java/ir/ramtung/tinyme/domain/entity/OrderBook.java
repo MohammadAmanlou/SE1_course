@@ -65,6 +65,19 @@ public class OrderBook {
         it.add(stopLimitOrder);
 
     }
+
+    public void activeStopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
+        ListIterator<StopLimitOrder> it = activeStopLimitOrders.listIterator();
+        while (it.hasNext()) {
+            if (stopLimitOrder.queuesBefore(it.next())) {
+                it.previous();
+                break;
+            }
+        }
+        stopLimitOrder.queue();
+        it.add(stopLimitOrder);
+
+    }
     
 
     private LinkedList<Order> getQueue(Side side) {
@@ -145,6 +158,7 @@ public class OrderBook {
             if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL)) {
                 iterator.remove();
                 order.setIsActive(true);
+                activeStopLimitOrderEnqueue(order);
                 // /stopLimitOrderEnqueue(order);
                 
         
@@ -159,6 +173,9 @@ public class OrderBook {
             if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
                 iterator.remove(); // Safe removal of the element
                 order.setIsActive(true);
+                System.out.println("my id" );
+                System.out.println(order.getOrderId());
+                activeStopLimitOrderEnqueue(order);
                 //stopLimitOrderEnqueue(order);
                 
             }

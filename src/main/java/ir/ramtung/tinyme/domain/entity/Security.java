@@ -71,7 +71,10 @@ public class Security {
         MatchResult matchResult = matcher.execute(order);
 
         if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
-            orderBook.setLastTradePrice(matchResult.getPrice());
+            if(matchResult.getPrice() > 0){
+                orderBook.setLastTradePrice(matchResult.getPrice());
+            }
+            System.out.println(orderBook.getInactiveBuyStopLimitOrders().size() );
             orderBook.activateStopLimitOrders();
             System.out.println(orderBook.getActiveStopLimitOrders().size() );
             processActivatedStopLimitOrders(matcher);

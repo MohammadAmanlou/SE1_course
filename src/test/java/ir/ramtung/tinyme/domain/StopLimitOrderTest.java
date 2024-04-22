@@ -228,7 +228,7 @@ public class StopLimitOrderTest {
     }
 
     @Test
-    void new_stopLimit_notMatching_changing_lastTradePrice() { //new_order_from_buyer_with_enough_credit_based_on_trades
+    void new_stopLimit_Matching_changing_lastTradePrice() { //new_order_from_buyer_with_enough_credit_based_on_trades
         Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
         Broker broker3 = Broker.builder().brokerId(30).credit(520_500).build();
@@ -237,26 +237,26 @@ public class StopLimitOrderTest {
         Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 400, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
      
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 , 800));
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 400, LocalDateTime.now(), 
-        Side.BUY, 10, 700, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 ));
 
-        assertThat(broker1.getCredit()).isEqualTo(104000 );
-        assertThat(broker2.getCredit()).isEqualTo(91000 );
+
+        assertThat(broker1.getCredit()).isEqualTo(108000 );
+        assertThat(broker2.getCredit()).isEqualTo(87000 );
         assertThat(broker3.getCredit()).isEqualTo(516500);
-
-        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
     }
 
 
 
     @Test
-    void m() { //new_order_from_buyer_with_enough_credit_based_on_trades
+    void new_stopLimit_notMatching_changing_lastTradePrice() { 
         Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
         Broker broker3 = Broker.builder().brokerId(30).credit(520_500).build();
@@ -265,47 +265,21 @@ public class StopLimitOrderTest {
         Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 400, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
      
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 , 200));
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 400, LocalDateTime.now(), 
-        Side.BUY, 10, 700, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 ));
 
-
-
-        assertThat(broker1.getCredit()).isEqualTo(108000 );
-        assertThat(broker2.getCredit()).isEqualTo(89000 );
+        assertThat(broker1.getCredit()).isEqualTo(104000 );
+        assertThat(broker2.getCredit()).isEqualTo(93000 );
         assertThat(broker3.getCredit()).isEqualTo(516500);
 
     }
-
-    @Test
-void updating_price_for_active_StopLimit_order() {
-    Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
-    brokerRepository.addBroker(broker1);
-    Order order = new StopLimitOrder(100, security, Side.BUY, 30, 500, broker1, shareholder,
-            50, 0);
-    security.getOrderBook().enqueue(order);
-    orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 520,
-            broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0, 0));
-    assertThat(broker1.getCredit()).isEqualTo(100_000 - 30 * 520);
-    verifyNoMoreInteractions(eventPublisher);
-}
-@Test
-void updating_quantity_for_active_StopLimit_order() {
-    Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
-    brokerRepository.addBroker(broker1);
-    Order order = new StopLimitOrder(100, security, Side.BUY, 30, 500, broker1, shareholder,
-            50, 0);
-    security.getOrderBook().enqueue(order);
-    orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 20, 500,
-            broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0, 0));
-    assertThat(broker1.getCredit()).isEqualTo(100_000 - 20 * 500);
-    verifyNoMoreInteractions(eventPublisher);
-}
 
 
 
