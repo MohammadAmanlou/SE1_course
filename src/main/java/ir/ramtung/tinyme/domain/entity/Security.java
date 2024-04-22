@@ -73,6 +73,7 @@ public class Security {
         if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
             orderBook.setLastTradePrice(matchResult.getPrice());
             orderBook.activateStopLimitOrders();
+            System.out.println(orderBook.getActiveStopLimitOrders().size() );
             processActivatedStopLimitOrders(matcher);
         }
 
@@ -156,8 +157,8 @@ public class Security {
     }
 
     public void processActivatedStopLimitOrders(Matcher matcher) {
-        List<StopLimitOrder>activatedOrders = orderBook.activateStopLimitOrders();
-        for (Order activatedOrder : activatedOrders) {
+        List<StopLimitOrder>activatedOrders = orderBook.getActiveStopLimitOrders();
+        for (StopLimitOrder activatedOrder : activatedOrders) {
             //convert the stop limit order to order?
     
             MatchResult matchResult = matcher.execute(activatedOrder);

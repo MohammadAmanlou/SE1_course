@@ -18,6 +18,7 @@ public class Matcher {
             if (matchingOrder == null)
                 break;
             else if ((newOrder instanceof StopLimitOrder) && ((StopLimitOrder) newOrder).getIsActive() == false){
+                orderBook.stopLimitOrderEnqueue((StopLimitOrder)newOrder);
                 break;
             }
 

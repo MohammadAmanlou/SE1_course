@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Iterator;
 
 import org.apache.commons.lang3.ObjectUtils.Null;
 
@@ -63,14 +64,6 @@ public class OrderBook {
         stopLimitOrder.queue();
         it.add(stopLimitOrder);
 
-        ListIterator<StopLimitOrder> it2 = activeStopLimitOrders.listIterator();
-        while (it2.hasNext()) {
-            if (stopLimitOrder.queuesBefore(it2.next())) {
-                it2.previous();
-                break;
-            }
-        }
-        it2.add(stopLimitOrder);
     }
     
 
@@ -145,32 +138,41 @@ public class OrderBook {
         this.lastTradePrice = lastTradePrice;
     }
 
+    public void activateSellStopLimitOrders() {
+        Iterator<StopLimitOrder> iterator = inactiveSellStopLimitOrders.iterator();
+        while (iterator.hasNext()) {
+            StopLimitOrder order = iterator.next();
+            if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL)) {
+                iterator.remove();
+                order.setIsActive(true);
+                // /stopLimitOrderEnqueue(order);
+                
+        
+            }
+        }
+    }
+
+    public void activateBuyStopLimitOrders() {
+        Iterator<StopLimitOrder> iterator = inactiveBuyStopLimitOrders.iterator();
+        while (iterator.hasNext()) {
+            StopLimitOrder order = iterator.next();
+            if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
+                iterator.remove(); // Safe removal of the element
+                order.setIsActive(true);
+                //stopLimitOrderEnqueue(order);
+                
+            }
+        }
+
+    }
+
     public List<StopLimitOrder> activateStopLimitOrders() {
 
         List<StopLimitOrder> activatedOrders = new ArrayList<>();
         
         
-        for (ListIterator<StopLimitOrder> it = inactiveSellStopLimitOrders.listIterator(); it.hasNext(); ) {
-            StopLimitOrder order = it.next();
-            if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL) ||
-                    (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
-                it.remove();
-                stopLimitOrderEnqueue(order);
-                order.setIsActive(true);
-                
-            }
-        }
-
-        for (ListIterator<StopLimitOrder> it2 = inactiveBuyStopLimitOrders.listIterator(); it2.hasNext(); ) {
-            StopLimitOrder order = it2.next();
-            if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL) ||
-                    (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
-                it2.remove();
-                stopLimitOrderEnqueue(order);
-                order.setIsActive(true);
-                
-            }
-        }
+        activateSellStopLimitOrders();
+        activateBuyStopLimitOrders();
 
         return activatedOrders;
     }
