@@ -3,6 +3,8 @@ package ir.ramtung.tinyme.domain.entity;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.NoSuchElementException;
+
 
 
 public final class MatchResult {
@@ -62,7 +64,14 @@ public final class MatchResult {
     }
 
     public double getPrice(){
-        return trades.getLast().getPrice();
+        try {
+            return trades.getLast().getPrice();
+        }
+        catch (NoSuchElementException e) {
+            // Handle the exception here, e.g. return a default value or log the error
+            return 0.0; // Example of returning a default value
+        }
     }
+    
 
 }

@@ -13,9 +13,9 @@ import org.apache.commons.lang3.ObjectUtils.Null;
 public class OrderBook {
     private final LinkedList<Order> buyQueue;
     private final LinkedList<Order> sellQueue;
-    private LinkedList<StopLimitOrder> activeStopLimitOrders;
-    private LinkedList<StopLimitOrder> inactiveBuyStopLimitOrders;
-    private LinkedList<StopLimitOrder> inactiveSellStopLimitOrders;
+    private LinkedList<StopLimitOrder> activeStopLimitOrders ;
+    private LinkedList<StopLimitOrder> inactiveBuyStopLimitOrders ;
+    private LinkedList<StopLimitOrder> inactiveSellStopLimitOrders ;
 
 
     private double lastTradePrice;
@@ -148,14 +148,24 @@ public class OrderBook {
     public List<StopLimitOrder> activateStopLimitOrders() {
 
         List<StopLimitOrder> activatedOrders = new ArrayList<>();
-        LinkedList<StopLimitOrder>  inactiveStopLimitOrders = new LinkedList<>();
-        inactiveStopLimitOrders.addAll(inactiveSellStopLimitOrders);
-        inactiveStopLimitOrders.addAll(inactiveBuyStopLimitOrders);
-        for (ListIterator<StopLimitOrder> it = inactiveStopLimitOrders.listIterator(); it.hasNext(); ) {
+        
+        
+        for (ListIterator<StopLimitOrder> it = inactiveSellStopLimitOrders.listIterator(); it.hasNext(); ) {
             StopLimitOrder order = it.next();
             if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL) ||
                     (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
                 it.remove();
+                stopLimitOrderEnqueue(order);
+                order.setIsActive(true);
+                
+            }
+        }
+
+        for (ListIterator<StopLimitOrder> it2 = inactiveBuyStopLimitOrders.listIterator(); it2.hasNext(); ) {
+            StopLimitOrder order = it2.next();
+            if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL) ||
+                    (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
+                it2.remove();
                 stopLimitOrderEnqueue(order);
                 order.setIsActive(true);
                 
