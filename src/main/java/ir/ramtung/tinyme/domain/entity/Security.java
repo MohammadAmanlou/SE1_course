@@ -74,6 +74,7 @@ public class Security {
                 orderBook.setLastTradePrice(matchResult.getPrice());
             }
             orderBook.activateStopLimitOrders();
+            System.out.println(broker.getCredit());
             processActivatedStopLimitOrders(matcher);
         }
 
@@ -109,7 +110,7 @@ public class Security {
         if (!(order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() > 0){
             throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
         }
-        if ((order instanceof StopLimitOrder) && (updateOrderRq.getMinimumExecutionQuantity() == 0) && (order.getMinimumExecutionQuantity() == 0)){
+        if ((order instanceof StopLimitOrder) && (updateOrderRq.getMinimumExecutionQuantity() != 0) && (order.getMinimumExecutionQuantity() == 0)){
             throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_MEQ);
         }
         if ((order instanceof StopLimitOrder) && (updateOrderRq.getPeakSize() != 0) ){

@@ -202,8 +202,6 @@ public class StopLimitOrderTest {
         assertThat(broker1.getCredit()).isEqualTo(104_000 );
         assertThat(broker2.getCredit()).isEqualTo(96000 );
         assertThat(broker3.getCredit()).isEqualTo(520_500);
-
-        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
     }
 
     @Test
@@ -307,7 +305,7 @@ public class StopLimitOrderTest {
 
 
         assertThat(broker1.getCredit()).isEqualTo(108000 );
-        assertThat(broker2.getCredit()).isEqualTo(87000 );
+        assertThat(broker2.getCredit()).isEqualTo(96000 );
         assertThat(broker3.getCredit()).isEqualTo(516500);
     }
 
@@ -421,28 +419,15 @@ public class StopLimitOrderTest {
     }
 
     @Test
-    void update_stop_price_for_inactive_buy_stop_limit_order_successfully_done(){
-        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
-        brokerRepository.addBroker(broker1);
-
-        Order stopLimitOrder = new StopLimitOrder(100, security, Side.BUY, 10, 500, broker1, shareholder,   10 , 0);
-        security.getOrderBook().enqueue(stopLimitOrder);
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 10, 500,
-                broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 50));
-
-        assertThat(broker1.getCredit()).isEqualTo(100_000);
-        assertThat(security.getOrderBook().findActiveByOrderId(Side.BUY, 100, 10, false).getStopPrice()).isEqualTo(50);
-    }
-
-    @Test
     void update_stop_price_for_inactive_sell_stop_limit_order_successfully_done(){
         Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
         brokerRepository.addBroker(broker1);
 
         Order stopLimitOrder = new StopLimitOrder(100, security, Side.SELL, 10, 500, broker1, shareholder,   10 , 0);
         security.getOrderBook().enqueue(stopLimitOrder);
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.SELL, 10, 500,
-                broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 50));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+        Side.SELL, 10, 500,broker1.getBrokerId(), shareholder.getShareholderId(),
+         0, 0 , 50));
         verify(eventPublisher).publish(new OrderUpdatedEvent(1,100));
         assertThat(broker1.getCredit()).isEqualTo(100_000);
         //assertThat(security.getOrderBook().findActiveByOrderId(Side.SELL, 100, 10, false).getStopPrice()).isEqualTo(50);

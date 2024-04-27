@@ -43,11 +43,14 @@ public class OrderBook {
     }
 
     private LinkedList<StopLimitOrder> getStopLimitOrderQueue(Side side, boolean isActive) {
-        if (side == Side.BUY && !isActive)
+        if (side == Side.BUY && !isActive){
             return inactiveBuyStopLimitOrders;
-        if (side == Side.SELL && !isActive)
+        }
+        if (side == Side.SELL && !isActive){
             return inactiveSellStopLimitOrders;
-    
+        }
+            
+        
         // If none of the conditions match, return null or an empty list, depending on your requirement
         return new LinkedList<StopLimitOrder>(); // Or return new LinkedList<StopLimitOrder>(); if you prefer an empty list
     }
@@ -179,9 +182,10 @@ public class OrderBook {
         Iterator<StopLimitOrder> iterator = inactiveBuyStopLimitOrders.iterator();
         while (iterator.hasNext()) {
             StopLimitOrder order = iterator.next();
-            if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
+            if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY )) {
                 iterator.remove(); // Safe removal of the element
-                order.getBroker().increaseCreditBy(order.getValue() * order.getQuantity());
+                order.getBroker().increaseCreditBy(order.getPrice() * order.getQuantity());
+                System.out.println(order);
                 order.setIsActive(true);
                 activeStopLimitOrderEnqueue(order);
                 //stopLimitOrderEnqueue(order);
