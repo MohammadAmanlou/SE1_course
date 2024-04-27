@@ -55,7 +55,6 @@ public class Security {
         }
 
         else if (enterOrderRq.getStopPrice() != 0){
-            broker.increaseCreditBy(orderValue);
             order = new StopLimitOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getStopPrice() );
@@ -74,9 +73,7 @@ public class Security {
             if(matchResult.getPrice() > 0){
                 orderBook.setLastTradePrice(matchResult.getPrice());
             }
-            System.out.println(orderBook.getInactiveBuyStopLimitOrders().size() );
             orderBook.activateStopLimitOrders();
-            System.out.println(orderBook.getActiveStopLimitOrders().size() );
             processActivatedStopLimitOrders(matcher);
         }
 

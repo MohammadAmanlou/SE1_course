@@ -181,9 +181,8 @@ public class OrderBook {
             StopLimitOrder order = iterator.next();
             if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY)) {
                 iterator.remove(); // Safe removal of the element
+                order.getBroker().increaseCreditBy(order.getValue() * order.getQuantity());
                 order.setIsActive(true);
-                System.out.println("my id" );
-                System.out.println(order.getOrderId());
                 activeStopLimitOrderEnqueue(order);
                 //stopLimitOrderEnqueue(order);
                 

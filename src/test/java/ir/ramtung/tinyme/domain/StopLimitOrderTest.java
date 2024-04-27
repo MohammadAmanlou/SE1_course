@@ -199,8 +199,8 @@ public class StopLimitOrderTest {
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(),
         0 , 0 , 600));
 
-        assertThat(broker1.getCredit()).isEqualTo(100_000 );
-        assertThat(broker2.getCredit()).isEqualTo(93000 );
+        assertThat(broker1.getCredit()).isEqualTo(104_000 );
+        assertThat(broker2.getCredit()).isEqualTo(96000 );
         assertThat(broker3.getCredit()).isEqualTo(520_500);
 
         verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));

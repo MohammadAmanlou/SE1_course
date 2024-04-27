@@ -54,10 +54,12 @@ public class Matcher {
             }
         }
         
-        if (matchBasedOnMinimumExecutionQuantity(newOrder, trades))
+        if (matchBasedOnMinimumExecutionQuantity(newOrder, trades)){
             return MatchResult.executed(newOrder, trades);
-        else
+        }   
+        else{
             return MatchResult.notEnoughQuantitiesMatched();
+        }     
     }
 
     private void rollbackBuyTrades(Order newOrder, LinkedList<Trade> trades) {
@@ -89,7 +91,8 @@ public class Matcher {
         if (result.outcome() == MatchingOutcome.NOT_ENOUGH_QUANTITIES_MATCHED)
             return result;
 
-        if (result.remainder().getQuantity() > 0) {
+        if (((result.remainder().getQuantity() > 0) && (!(order instanceof StopLimitOrder))) 
+        ||  ((order instanceof StopLimitOrder) && ( ((StopLimitOrder)order).getIsActive() == true))) {
             if (order.getSide() == Side.BUY) {
                 if (!order.getBroker().hasEnoughCredit(order.getValue())) {
                     rollbackBuyTrades(order, result.trades());
