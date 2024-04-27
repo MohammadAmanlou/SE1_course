@@ -93,6 +93,15 @@ public class OrderBook {
         return null;
     }
 
+    public StopLimitOrder findActiveByOrderId(Side side, long orderId, int stopPrice, boolean isActive){
+        var queue = getStopLimitOrderQueue(side, isActive);
+        for (StopLimitOrder order : queue) {
+            if (order.getOrderId() == orderId)
+                return order;
+        }
+        return null;
+    }
+
     public boolean removeByOrderId(Side side, long orderId) {
         var queue = getQueue(side);
         var it = queue.listIterator();
@@ -193,6 +202,5 @@ public class OrderBook {
 
         return activatedOrders;
     }
-
     
 }

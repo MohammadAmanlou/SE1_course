@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class StopLimitOrder extends Order {
-    int stopPrice ; 
+    int stopPrice ;
     Boolean isActive ;
 
     public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, int stopPrice, OrderStatus status) {
