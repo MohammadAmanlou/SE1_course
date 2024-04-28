@@ -44,14 +44,15 @@ public class Matcher {
                     if (icebergOrder.getQuantity() > 0)
                         orderBook.enqueue(icebergOrder);
                 }
-                if (matchingOrder instanceof StopLimitOrder stopLimitOrder) {
-                    stopLimitOrder.decreaseQuantity(matchingOrder.getQuantity());
-                    if (stopLimitOrder.getQuantity() > 0)
-                        orderBook.enqueue(stopLimitOrder);
-                }
+                // if (matchingOrder instanceof StopLimitOrder ) {
+                //     stopLimitOrder.decreaseQuantity(matchingOrder.getQuantity());
+                //     if (stopLimitOrder.getQuantity() > 0)
+                //         orderBook.enqueue(stopLimitOrder);
+                // }
             } else {
                 matchingOrder.decreaseQuantity(newOrder.getQuantity());
                 newOrder.makeQuantityZero();
+                
             }
         }
         

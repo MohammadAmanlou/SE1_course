@@ -851,7 +851,7 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0 , 320));
     
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.BUY, 10, 500, broker2.getBrokerId(), shareholder.getShareholderId(), 
@@ -862,19 +862,19 @@ public class StopLimitOrderTest {
         0 , 0 , 300));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(4, "ABC", 500, LocalDateTime.now(), 
-        Side.BUY, 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        Side.BUY, 40, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 , 350));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
         Side.SELL, 10, 100, broker3.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 ));
 
-        assertThat(broker1.getCredit()).isEqualTo(104_000 );
+        assertThat(broker1.getCredit()).isEqualTo(120_000 );
         assertThat(broker2.getCredit()).isEqualTo(102_000 );
         assertThat(broker3.getCredit()).isEqualTo(503_000);  
     }
     @Test
-    void few_sell_SLOs_get_activated_after_one_order_has_been_traded(){ //mmd is working on error
+    void few_sell_SLOs_get_activated_after_one_order_has_been_traded(){ 
         Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
         Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();

@@ -74,6 +74,7 @@ public class Security {
                 orderBook.setLastTradePrice(matchResult.getPrice());
             }
             orderBook.activateStopLimitOrders();
+            System.out.println(orderBook.getLastTradePrice());
             processActivatedStopLimitOrders(matcher);
         }
 
@@ -186,10 +187,14 @@ public class Security {
             activatedOrders.remove(activatedOrder);
             matchResults.add(matchResult);
     
-            if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
-                orderBook.setLastTradePrice(matchResult.getPrice());
-                orderBook.activateStopLimitOrders();
-            }
+            // if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
+            //     if (matchResult.getPrice() > 0){
+            //         orderBook.setLastTradePrice(matchResult.getPrice());
+            //         orderBook.activateStopLimitOrders();
+            //     }
+
+
+            //}
         }
     }
     

@@ -203,16 +203,16 @@ public class OrderBook {
                 
             }
         }
-
     }
 
     public List<StopLimitOrder> activateStopLimitOrders() {
 
         List<StopLimitOrder> activatedOrders = new ArrayList<>();
         
-        
-        activateSellStopLimitOrders();
-        activateBuyStopLimitOrders();
+        if(inactiveSellStopLimitOrders.size() > 0 )
+            activateSellStopLimitOrders();
+        if(inactiveBuyStopLimitOrders.size() > 0)
+            activateBuyStopLimitOrders();
 
         return activatedOrders;
     }
