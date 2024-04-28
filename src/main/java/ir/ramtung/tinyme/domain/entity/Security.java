@@ -74,7 +74,6 @@ public class Security {
                 orderBook.setLastTradePrice(matchResult.getPrice());
             }
             orderBook.activateStopLimitOrders();
-            System.out.println(broker.getCredit());
             processActivatedStopLimitOrders(matcher);
         }
 

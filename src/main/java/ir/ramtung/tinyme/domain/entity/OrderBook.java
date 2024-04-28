@@ -185,7 +185,6 @@ public class OrderBook {
             if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY )) {
                 iterator.remove(); // Safe removal of the element
                 order.getBroker().increaseCreditBy(order.getPrice() * order.getQuantity());
-                System.out.println(order);
                 order.setIsActive(true);
                 activeStopLimitOrderEnqueue(order);
                 //stopLimitOrderEnqueue(order);

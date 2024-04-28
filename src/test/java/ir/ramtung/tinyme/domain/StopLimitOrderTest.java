@@ -380,15 +380,13 @@ public class StopLimitOrderTest {
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
                 Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(),
                 0 , 0 , 200));
-
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(),
                 Side.BUY, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(),
                 0 , 0 , 300));
-
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.BUY, 20, 600,
                 broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 300));
 
-        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
+        verify(eventPublisher.get(0) , times(1)).publish(new OrderRejectedEvent(3,300 , List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
 
         assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300, 300, false).getQuantity()).isEqualTo(20);
 
