@@ -180,8 +180,8 @@ public class OrderBook {
         while (iterator.hasNext()) {
             StopLimitOrder order = iterator.next();
             if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL)) {
-                iterator.remove();
                 order.setIsActive(true);
+                iterator.remove();
                 activeStopLimitOrderEnqueue(order);
                 // /stopLimitOrderEnqueue(order);
                 

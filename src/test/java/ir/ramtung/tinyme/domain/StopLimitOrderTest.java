@@ -467,7 +467,7 @@ public class StopLimitOrderTest {
                 0 , 0 , 500));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.SELL, 20, 600,
-                broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
+                broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
         verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
         verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
         verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
@@ -497,7 +497,7 @@ public class StopLimitOrderTest {
                 0 , 0 , 300));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.BUY, 10, 300,
-                broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
+                broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
 
         //assertThat(broker1.getCredit()).isEqualTo(104_000);
         assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300, 500, false).getPrice()).isEqualTo(300);
@@ -525,7 +525,7 @@ public class StopLimitOrderTest {
                 0 , 0 , 500));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.SELL, 10, 300,
-                broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
+                broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
 
         assertThat(broker1.getCredit()).isEqualTo(104_000);
         assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 500, false).getPrice()).isEqualTo(300);
@@ -693,70 +693,8 @@ public class StopLimitOrderTest {
         assertThat(broker2.getCredit()).isEqualTo(101_000 );
         assertThat(broker3.getCredit()).isEqualTo(516_000);  
     }
-/* 
-    @Test 
-    void sell_SLO_activates_because_one_order_with_less_stop_price_comes_after_it(){ //not checked
-        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
-        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
-        Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
-        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
-
-        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
-        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
-        security.getOrderBook().enqueue(matchingSellOrder1);
-        security.getOrderBook().enqueue(matchingSellOrder2);
-
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
-        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
-
-
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
-        Side.BUY, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 500));
-
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
-        Side.SELL, 10, 150, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 ));
-
-        assertThat(broker1.getCredit()).isEqualTo(108_000 );
-        assertThat(broker2.getCredit()).isEqualTo(101_000 );
-        assertThat(broker3.getCredit()).isEqualTo(516_000);  
-    }
-
-///
-///
     @Test
-    void SLO_stays_deactivated_after_one_order_gets_accepted(){
-        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
-        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
-        Broker broker3 = Broker.builder().brokerId(30).credit(520_500).build();
-        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
-
-        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
-        Order matchingSellOrder2 = new Order(110, security, Side.BUY, 20, 400, broker1, shareholder,0);
-        security.getOrderBook().enqueue(matchingSellOrder1);
-        security.getOrderBook().enqueue(matchingSellOrder2);
-
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 200, LocalDateTime.now(), 
-        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
-        assertThat(broker1.getCredit()).isEqualTo(100_000 );
-        assertThat(broker2.getCredit()).isEqualTo(100_000 );
-    }
-
-    @Test
-    void SLO_stays_activated_after_updating_its_price(){}
-
-    @Test
-    void few_SLOs_get_activated_after_one_order_(){}
-
-*/
-
-
-
-    @Test
-    void update_stop_price_for_inactive_sell_stop_limit_order_successfully_done_and_be_active(){
+    void update_price_for_inactive_sell_stop_limit_order_successfully_done_and_be_active(){
         Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
         Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
@@ -776,12 +714,233 @@ public class StopLimitOrderTest {
                 0 , 0 , 500));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.SELL, 10, 300,
-                broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 100));
+                broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
 
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 100, false).getStopPrice()).isEqualTo(300);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 100, false).getPrice()).isEqualTo(300);
 
-        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(1,100));
-        assertThat(broker1.getCredit()).isEqualTo(100_000);
-        //assertThat(security.getOrderBook().findActiveByOrderId(Side.SELL, 100, 10, false).getStopPrice()).isEqualTo(50);
+        verify(eventPublisher.get(0) , times(1)).publish(new OrderUpdatedEvent(3,300));
+        assertThat(broker1.getCredit()).isEqualTo(104_000);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL, 300, 10, false).getStopPrice()).isEqualTo(500);
     }
+
+    @Test
+    void delete_sell_active_stop_limit_order_deletes_successfully_and_increases_credit(){
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
+                Side.SELL, 10, 350, broker2.getBrokerId(), shareholder.getShareholderId(),
+                0 , 0 , 200));
+
+        orderHandler.handleDeleteOrder(new DeleteOrderRq(2, security.getIsin(), Side.SELL, 200));
+        verify(eventPublisher.get(0)).publish(new OrderDeletedEvent(2, 200));
+
+        assertThat(security.getOrderBook().findByOrderId(Side.BUY , 200)).isEqualTo(null);
+        assertThat(broker2.getCredit()).isEqualTo(100_000);
+    }
+
+    @Test 
+    void sell_SLO_activates_because_one_order_with_less_stop_price_comes_after_it(){ // checked
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 200));
+
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
+        Side.SELL, 10, 200, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 300));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
+        Side.BUY, 20, 400, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
+
+        assertThat(broker1.getCredit()).isEqualTo(108_000 );
+        assertThat(broker2.getCredit()).isEqualTo(88_000 );
+        assertThat(broker3.getCredit()).isEqualTo(525_000);  
+    }
+
+    @Test 
+    void sell_SLO_not_activates_because_one_order_with_greater_stop_price_comes_after_it(){ // checked
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 200));
+
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
+        Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 500));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
+        Side.BUY, 20, 400, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
+
+        assertThat(broker1.getCredit()).isEqualTo(108_000 );
+        assertThat(broker2.getCredit()).isEqualTo(88_000 );
+        assertThat(broker3.getCredit()).isEqualTo(520_000);  
+    }
+    @Test
+    void few_buy_SLOs_not_get_activated_after_one_order_(){// not checked
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 60, 600, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 50, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 200));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
+        Side.BUY, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 300));
+    
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
+        Side.BUY, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 250)); //stop price less than trade(400) and not active at first
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
+        Side.SELL, 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
+
+        assertThat(broker1.getCredit()).isEqualTo(104_000 );
+        assertThat(broker2.getCredit()).isEqualTo(102_000 );
+        assertThat(broker3.getCredit()).isEqualTo(509_000);  
+    }
+
+    @Test
+    void few_buy_SLOs_get_activated_after_one_order_(){// mmd is working on the error
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 60, 100, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 50, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 200));
+    
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
+        Side.BUY, 10, 500, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 250)); //stop price less than trade(400)
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
+        Side.BUY, 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 300));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(4, "ABC", 500, LocalDateTime.now(), 
+        Side.BUY, 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 350));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
+        Side.SELL, 10, 100, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
+
+        assertThat(broker1.getCredit()).isEqualTo(104_000 );
+        assertThat(broker2.getCredit()).isEqualTo(102_000 );
+        assertThat(broker3.getCredit()).isEqualTo(503_000);  
+    }
+    @Test
+    void few_sell_SLOs_get_activated_after_one_order_has_been_traded(){ //mmd is working on error
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 60, 600, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 50, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);       
+   
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
+        Side.SELL, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 200)); 
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
+        Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 100));
+
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
+        Side.BUY , 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
+
+        assertThat(broker1.getCredit()).isEqualTo(104_000 );
+        assertThat(broker2.getCredit()).isEqualTo(96_000 );
+        assertThat(broker3.getCredit()).isEqualTo(526_000);  
+}
+//
+    @Test
+    void two_buy_SLOs_get_activated_but_the_one_with_higher_priority_become_traded(){ 
+        Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(4000).build();
+        List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
+
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 60, 200, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 50, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder1);
+        security.getOrderBook().enqueue(matchingSellOrder2);
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 200));//trade price:400
+   
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
+        Side.BUY, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 300)); 
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
+        Side.BUY, 5, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 250));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
+        Side.SELL , 10, 200, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
+
+        assertThat(broker1.getCredit()).isEqualTo(106_000 );
+        assertThat(broker2.getCredit()).isEqualTo(98_000 );
+        assertThat(broker3.getCredit()).isEqualTo(2000);  
+      //  verify(eventPublisher.get(0)).publish((new OrderAcceptedEvent(2, 300)));
+            
+}
+
+
+
+
+
+
 }

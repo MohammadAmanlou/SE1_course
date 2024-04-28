@@ -15,12 +15,13 @@ public class Matcher {
 
         while (orderBook.hasOrderOfType(newOrder.getSide().opposite()) && newOrder.getQuantity() > 0) {
             Order matchingOrder = orderBook.matchWithFirst(newOrder);
-            if (matchingOrder == null)
-                break;
-            else if ((newOrder instanceof StopLimitOrder) && ((StopLimitOrder) newOrder).getIsActive() == false){
+            if ((newOrder instanceof StopLimitOrder) && ((StopLimitOrder) newOrder).getIsActive() == false){
                 orderBook.stopLimitOrderEnqueue((StopLimitOrder)newOrder);
                 break;
             }
+            else if (matchingOrder == null)
+                break;
+
 
             Trade trade = new Trade(newOrder.getSecurity(), matchingOrder.getPrice(), Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
             if (newOrder.getSide() == Side.BUY) {
