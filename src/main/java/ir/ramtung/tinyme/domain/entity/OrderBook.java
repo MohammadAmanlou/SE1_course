@@ -96,7 +96,7 @@ public class OrderBook {
         return null;
     }
 
-    public StopLimitOrder findActiveByOrderId(Side side, long orderId, int stopPrice, boolean isActive){
+    public StopLimitOrder findInActiveByOrderId(Side side, long orderId, int stopPrice, boolean isActive){
         var queue = getStopLimitOrderQueue(side, isActive);
         for (StopLimitOrder order : queue) {
             if (order.getOrderId() == orderId)
