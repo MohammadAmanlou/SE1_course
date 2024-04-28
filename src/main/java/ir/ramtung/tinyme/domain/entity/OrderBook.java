@@ -117,6 +117,18 @@ public class OrderBook {
         return false;
     }
 
+    public boolean removeInActiveStopLimitByOrderId(Side side, long orderId) {
+        var queue = getStopLimitOrderQueue(side, false);
+        var it = queue.listIterator();
+        while (it.hasNext()) {
+            if (it.next().getOrderId() == orderId) {
+                it.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Order matchWithFirst(Order newOrder) {
         var queue = getQueue(newOrder.getSide().opposite());
         if (newOrder.matches(queue.getFirst()))

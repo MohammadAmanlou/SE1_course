@@ -51,10 +51,12 @@ public class OrderHandler {
             for (MatchResult matchResult : matchResults) {
                 if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
                     eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
+                    matchResults.clear();
                     return;
                 }
                 if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
                     eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+                    matchResults.clear();
                     return;
                 }
                 if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
@@ -66,6 +68,7 @@ public class OrderHandler {
                     eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
                 }
             }
+            matchResults.clear();
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), ex.getReasons()));
         }
