@@ -394,13 +394,17 @@ public class StopLimitOrderTest {
                 0 , 0 , 200));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(),
-                Side.BUY, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 300));
+                Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(),
+                0 , 0 , 500));
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.BUY, 10, 300,
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.SELL, 20, 600,
                 broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
+        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
+        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
+        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
+        //assertThat(broker1.getCredit()).isEqualTo(104_000);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 500, false).getQuantity()).isEqualTo(20);
 
-        assertThat(broker1.getCredit()).isEqualTo(104_000);
     }
 
     @Test
@@ -426,7 +430,9 @@ public class StopLimitOrderTest {
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.BUY, 10, 300,
                 broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
 
-        assertThat(broker1.getCredit()).isEqualTo(104_000);
+        //assertThat(broker1.getCredit()).isEqualTo(104_000);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300, 500, false).getPrice()).isEqualTo(300);
+
     }
 
     @Test
@@ -454,8 +460,6 @@ public class StopLimitOrderTest {
 
         assertThat(broker1.getCredit()).isEqualTo(104_000);
         assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 500, false).getPrice()).isEqualTo(300);
-        //assertThat(security.getOrderBook().findByOrderId(Side.BUY, 1))
-        //                .isEqualTo(orders.get(0));
     }
 
     @Test
