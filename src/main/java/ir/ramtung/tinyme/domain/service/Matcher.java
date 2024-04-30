@@ -15,13 +15,12 @@ public class Matcher {
 
         while (orderBook.hasOrderOfType(newOrder.getSide().opposite()) && newOrder.getQuantity() > 0) {
             Order matchingOrder = orderBook.matchWithFirst(newOrder);
-            if ((newOrder instanceof StopLimitOrder) && ((StopLimitOrder) newOrder).getIsActive() == false){
-                orderBook.stopLimitOrderEnqueue((StopLimitOrder)newOrder);
+            // if ((newOrder instanceof StopLimitOrder) && ((StopLimitOrder) newOrder).getIsActive() == false){
+            //     orderBook.stopLimitOrderEnqueue((StopLimitOrder)newOrder);
+            //     break;
+            // }
+            if (matchingOrder == null)
                 break;
-            }
-            else if (matchingOrder == null)
-                break;
-
 
             Trade trade = new Trade(newOrder.getSecurity(), matchingOrder.getPrice(), Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
             if (newOrder.getSide() == Side.BUY) {
@@ -44,21 +43,14 @@ public class Matcher {
                     if (icebergOrder.getQuantity() > 0)
                         orderBook.enqueue(icebergOrder);
                 }
-                // if (matchingOrder instanceof StopLimitOrder ) {
-                //     stopLimitOrder.decreaseQuantity(matchingOrder.getQuantity());
-                //     if (stopLimitOrder.getQuantity() > 0)
-                //         orderBook.enqueue(stopLimitOrder);
-                // }
             } else {
                 matchingOrder.decreaseQuantity(newOrder.getQuantity());
                 newOrder.makeQuantityZero();
-                
             }
         }
-        
         if (matchBasedOnMinimumExecutionQuantity(newOrder, trades)){
             return MatchResult.executed(newOrder, trades);
-        }   
+        }  
         else{
             return MatchResult.notEnoughQuantitiesMatched();
         }     
@@ -93,8 +85,7 @@ public class Matcher {
         if (result.outcome() == MatchingOutcome.NOT_ENOUGH_QUANTITIES_MATCHED)
             return result;
 
-        if (((result.remainder().getQuantity() > 0) && (!(order instanceof StopLimitOrder))) 
-        ||  ((order instanceof StopLimitOrder) && ( ((StopLimitOrder)order).getIsActive() == true))) {
+        if (((result.remainder().getQuantity() > 0))) {
             if (order.getSide() == Side.BUY) {
                 if (!order.getBroker().hasEnoughCredit(order.getValue()) && !(order instanceof StopLimitOrder)) {
                     rollbackBuyTrades(order, result.trades());
@@ -105,6 +96,7 @@ public class Matcher {
             order.getSecurity().getOrderBook().enqueue(result.remainder());
         }
         if (!result.trades().isEmpty()) {
+            order.getSecurity().getOrderBook().setLastTradePrice(result.trades().getLast().getPrice());
             for (Trade trade : result.trades()) {
                 trade.getBuy().getShareholder().incPosition(trade.getSecurity(), trade.getQuantity());
                 trade.getSell().getShareholder().decPosition(trade.getSecurity(), trade.getQuantity());

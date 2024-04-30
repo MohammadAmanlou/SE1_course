@@ -90,6 +90,36 @@ public class Order {
         }
     }
 
+    public double getStopPrice(){
+        return 0;
+    }
+
+    public boolean inactiveOrderQueuesBefore(Order order){ //kasif
+        int entryCompareResult = this.entryTime.compareTo(order.getEntryTime());
+        if (order.getSide() == Side.BUY ){
+            if(this.getStopPrice() < order.getStopPrice()){
+                return true;
+            }
+            else if(this.getStopPrice() == order.getStopPrice()){
+                return entryCompareResult < 0;
+            }
+            else{
+                return false;
+            }
+        }
+        else{
+            if(this.getStopPrice() > order.getStopPrice()){
+                return true;
+            }
+            else if(this.getStopPrice() == order.getStopPrice()){
+                return entryCompareResult < 0;
+            }
+            else{
+                return false; 
+            }
+        }
+    }
+
     public void queue() {
         status = OrderStatus.QUEUED;
     }
