@@ -76,7 +76,7 @@ public class StopLimitOrderTest {
         security.getOrderBook().enqueue(order);
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 30, 500,
-         broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 10));
+        broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 10));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000);
         verify(eventPublisher.get(0)).publish(new OrderRejectedEvent(1, 100, List.of(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER)));
@@ -215,8 +215,8 @@ public class StopLimitOrderTest {
         Trade trade = new Trade(security, matchingBuyOrder.getPrice(), incomingSellOrder.getQuantity(),
         matchingBuyOrder, incomingSellOrder);
         
-        assertThat(broker1.getCredit()).isEqualTo(0 );
-        assertThat(broker2.getCredit()).isEqualTo(4650000 );
+        assertThat(broker1.getCredit()).isEqualTo(100000 );
+        assertThat(broker2.getCredit()).isEqualTo(4750000 );
         verify(eventPublisher.get(0)).publish((new OrderAcceptedEvent(1, 200)));
         verify(eventPublisher.get(0)).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade))));
     }
@@ -278,7 +278,7 @@ public class StopLimitOrderTest {
          50, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,1));
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 );
-        assertThat(broker2.getCredit()).isEqualTo(0 );
+        assertThat(broker2.getCredit()).isEqualTo(100000 );
         verify(eventPublisher.get(0)).publish(new OrderAcceptedEvent(1, 100));
     }
 
@@ -299,7 +299,7 @@ public class StopLimitOrderTest {
      
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 800));
+        0 , 0 , 300));
 
 
 
@@ -325,7 +325,7 @@ public class StopLimitOrderTest {
      
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0 , 450));
 
 
         assertThat(broker1.getCredit()).isEqualTo(104000 );
@@ -357,7 +357,7 @@ public class StopLimitOrderTest {
 
         verify(eventPublisher.get(0)).publish(new OrderDeletedEvent(3, 300));
 
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300, 300, false)).isEqualTo(null);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300)).isEqualTo(null);
         assertThat(broker3.getCredit()).isEqualTo(520_000);
 
     }
@@ -386,7 +386,7 @@ public class StopLimitOrderTest {
 
         verify(eventPublisher.get(0)).publish(new OrderDeletedEvent(3, 300));
 
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 500, false)).isEqualTo(null);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300)).isEqualTo(null);
         assertThat(broker3.getCredit()).isEqualTo(520_000);
     }
 
@@ -441,7 +441,7 @@ public class StopLimitOrderTest {
 
         verify(eventPublisher.get(0) , times(1)).publish(new OrderUpdatedEvent(3, 300));
 
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300, 300, false).getQuantity()).isEqualTo(20);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300).getQuantity()).isEqualTo(20);
 
     }
 
@@ -459,19 +459,17 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
                 Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 200));
+                0 , 0 ));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(),
                 Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 500));
+                0 , 0 , 300));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.SELL, 20, 600,
                 broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
         verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
-        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
-        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(3,300));
-        //assertThat(broker1.getCredit()).isEqualTo(104_000);
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 500, false).getQuantity()).isEqualTo(20);
+        assertThat(broker1.getCredit()).isEqualTo(104_000);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300).getQuantity()).isEqualTo(20);
 
     }
 
@@ -489,17 +487,17 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
                 Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 200));
+                0 , 0));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(),
                 Side.BUY, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 300));
+                0 , 0 , 500));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.BUY, 10, 300,
                 broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
 
-        //assertThat(broker1.getCredit()).isEqualTo(104_000);
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300, 500, false).getPrice()).isEqualTo(300);
+        assertThat(broker1.getCredit()).isEqualTo(104_000);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.BUY , 300).getPrice()).isEqualTo(300);
 
     }
 
@@ -517,21 +515,21 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
                 Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 200));
+                0 , 0 ));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(),
                 Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 500));
+                0 , 0 , 300));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.SELL, 10, 300,
                 broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
 
         assertThat(broker1.getCredit()).isEqualTo(104_000);
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 500, false).getPrice()).isEqualTo(300);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300).getPrice()).isEqualTo(300);
     }
 
     @Test
-    void update_stop_price_for_inactive_sell_stop_limit_order_successfully_done(){
+    void update_stop_price_for_active_sell_stop_limit_order_successfully_rejected(){
         Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
         brokerRepository.addBroker(broker1);
 
@@ -540,9 +538,9 @@ public class StopLimitOrderTest {
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), 
         Side.SELL, 10, 500,broker1.getBrokerId(), shareholder.getShareholderId(),
          0, 0 , 50));
-        verify(eventPublisher.get(0)).publish(new OrderUpdatedEvent(1,100));
+        verify(eventPublisher.get(0)).publish(new OrderRejectedEvent(1,100,List.of(Message.UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE)));
         assertThat(broker1.getCredit()).isEqualTo(100_000);
-        //assertThat(security.getOrderBook().findActiveByOrderId(Side.SELL, 100, 10, false).getStopPrice()).isEqualTo(50);
+        assertThat(security.getOrderBook().findByOrderId(Side.SELL  , 100).getStopPrice()).isEqualTo(10);
     }
 
     @Test
@@ -623,11 +621,11 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0 ));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.BUY, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 100));
+        0 , 0 , 500));
         assertThat(broker1.getCredit()).isEqualTo(104_000 );
         assertThat(broker2.getCredit()).isEqualTo(96_000 );
         assertThat(broker3.getCredit()).isEqualTo(515_000);  
@@ -647,12 +645,12 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0 ));
 
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.BUY, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 300));
+        0 , 0 , 500));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
         Side.SELL, 10, 150, broker2.getBrokerId(), shareholder.getShareholderId(), 
@@ -677,12 +675,12 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0));
 
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.BUY, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 500));
+        0 , 0 , 300));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
         Side.SELL, 10, 150, broker2.getBrokerId(), shareholder.getShareholderId(), 
@@ -706,42 +704,46 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
                 Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 200));
+                0 , 0 ));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(),
                 Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 500));
+                0 , 0 , 300));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(3, "ABC", 300, LocalDateTime.now(), Side.SELL, 10, 300,
-                broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 500));
+                broker3.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 300));
 
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300, 100, false).getPrice()).isEqualTo(300);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL , 300).getPrice()).isEqualTo(300);
 
         verify(eventPublisher.get(0) , times(1)).publish(new OrderUpdatedEvent(3,300));
         assertThat(broker1.getCredit()).isEqualTo(104_000);
-        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL, 300, 10, false).getStopPrice()).isEqualTo(500);
+        assertThat(security.getOrderBook().findInActiveByOrderId(Side.SELL, 300).getStopPrice()).isEqualTo(300);
     }
 
     @Test
-    void delete_sell_active_stop_limit_order_deletes_successfully_and_increases_credit(){
+    void delete_sell_active_stop_limit_order_deletes_successfully(){
         Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
 
-        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 30, 500, broker1, shareholder,0);
+        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 30, 300, broker1, shareholder,0);
         Order matchingSellOrder2 = new Order(110, security, Side.SELL, 20, 400, broker1, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
-                Side.SELL, 10, 350, broker2.getBrokerId(), shareholder.getShareholderId(),
-                0 , 0 , 200));
+                Side.SELL, 10, 250, broker2.getBrokerId(), shareholder.getShareholderId(),
+                0 , 0));
 
-        orderHandler.handleDeleteOrder(new DeleteOrderRq(2, security.getIsin(), Side.SELL, 200));
-        verify(eventPublisher.get(0)).publish(new OrderDeletedEvent(2, 200));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(),
+        Side.SELL, 10, 550, broker2.getBrokerId(), shareholder.getShareholderId(),
+        0 , 0 , 400));
 
-        assertThat(security.getOrderBook().findByOrderId(Side.BUY , 200)).isEqualTo(null);
-        assertThat(broker2.getCredit()).isEqualTo(100_000);
+        orderHandler.handleDeleteOrder(new DeleteOrderRq(3, security.getIsin(), Side.SELL, 300));
+        verify(eventPublisher.get(0)).publish(new OrderDeletedEvent(3, 300));
+
+        assertThat(security.getOrderBook().findByOrderId(Side.SELL , 300)).isEqualTo(null);
+        assertThat(broker2.getCredit()).isEqualTo(103_000);
     }
 
     @Test 
@@ -758,12 +760,12 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0 ));
 
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.SELL, 10, 200, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 300));
+        0 , 0 , 500));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
         Side.BUY, 20, 400, broker2.getBrokerId(), shareholder.getShareholderId(), 
@@ -788,12 +790,12 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0 ));
 
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 500));
+        0 , 0 , 300));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
         Side.BUY, 20, 400, broker2.getBrokerId(), shareholder.getShareholderId(), 
@@ -817,15 +819,15 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));
+        0 , 0 ));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
         Side.BUY, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 300));
+        0 , 0 , 500));
     
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.BUY, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 250)); //stop price less than trade(400) and not active at first
+        0 , 0 , 550)); //stop price less than trade(400) and not active at first
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
         Side.SELL, 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
@@ -850,7 +852,7 @@ public class StopLimitOrderTest {
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 0));
+        0 , 0 ));
     
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.BUY, 10, 500, broker2.getBrokerId(), shareholder.getShareholderId(), 
@@ -886,11 +888,11 @@ public class StopLimitOrderTest {
    
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.SELL, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200)); 
+        0 , 0 )); 
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
         Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 100));
+        0 , 0 , 500));
 
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
@@ -906,40 +908,32 @@ public class StopLimitOrderTest {
     void two_buy_SLOs_get_activated_but_the_one_with_higher_priority_become_traded(){ 
         Broker broker1 = Broker.builder().brokerId(10).credit(100_000).build();
         Broker broker2 = Broker.builder().brokerId(20).credit(100_000).build();
-        Broker broker3 = Broker.builder().brokerId(30).credit(4000).build();
+        Broker broker3 = Broker.builder().brokerId(30).credit(520_000).build();
         List.of(broker1, broker2, broker3).forEach(b -> brokerRepository.addBroker(b));
 
-        Order matchingSellOrder1 = new Order(100, security, Side.BUY, 60, 200, broker1, shareholder,0);
-        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 50, 400, broker1, shareholder,0);
+        Order matchingSellOrder1 = new Order(100, security, Side.SELL, 60, 600, broker1, shareholder,0);
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 10, 400, broker1, shareholder,0);
         security.getOrderBook().enqueue(matchingSellOrder1);
         security.getOrderBook().enqueue(matchingSellOrder2);
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 200));//trade price:400
+        0 , 0 ));
    
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 300, LocalDateTime.now(), 
         Side.BUY, 10, 500, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 300)); 
+        0 , 0 , 499)); 
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
         Side.BUY, 5, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 250));
+        0 , 0 , 550));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
-        Side.SELL , 10, 200, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        Side.BUY , 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 ));
 
-        assertThat(broker1.getCredit()).isEqualTo(106_000 );
-        assertThat(broker2.getCredit()).isEqualTo(98_000 );
-        assertThat(broker3.getCredit()).isEqualTo(2000);  
-      //  verify(eventPublisher.get(0)).publish((new OrderAcceptedEvent(2, 300)));
-            
-}
-
-
-
-
-
-
+        assertThat(broker1.getCredit()).isEqualTo(113_000 );
+        assertThat(broker2.getCredit()).isEqualTo(90_000 );
+        assertThat(broker3.getCredit()).isEqualTo(512000);  
+    }
 }

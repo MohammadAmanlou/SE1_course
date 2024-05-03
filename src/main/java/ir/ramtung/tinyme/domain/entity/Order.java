@@ -127,6 +127,10 @@ public class Order {
     public void markAsNew(){
         status = OrderStatus.NEW;
     }
+
+    public void markAsUpdating(){
+        status = OrderStatus.UPDATING;
+    }
     public boolean isQuantityIncreased(int newQuantity) {
         return newQuantity > quantity;
     }

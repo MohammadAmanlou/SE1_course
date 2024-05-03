@@ -42,20 +42,7 @@ public class OrderBook {
         order.queue();
         it.add(order);
     }
-
-    // private LinkedList<Order> getStopLimitOrderQueue(Side side, boolean isActive) {
-    //     if (side == Side.BUY && !isActive){
-    //         return inactiveBuyStopLimitOrders;
-    //     }
-    //     if (side == Side.SELL && !isActive){
-    //         return inactiveSellStopLimitOrders;
-    //     }
-            
-        
-    //     // If none of the conditions match, return null or an empty list, depending on your requirement
-    //     return new LinkedList<Order>(); // Or return new LinkedList<StopLimitOrder>(); if you prefer an empty list
-    // }
-
+    
     public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
         List<Order> queue = getInactiveStopLimitOrdersQueue(stopLimitOrder.getSide() ); 
         ListIterator<Order> it = queue.listIterator();
@@ -107,7 +94,7 @@ public class OrderBook {
         return null;
     }
 
-    public Order findInActiveByOrderId(Side side, long orderId, double stopPrice, boolean isActive){
+    public Order findInActiveByOrderId(Side side, long orderId){
         var queue = getInactiveStopLimitOrdersQueue(side);
         for (Order order : queue) {
             if (order.getOrderId() == orderId)
@@ -120,7 +107,7 @@ public class OrderBook {
         ListIterator<Order> it = getInactiveStopLimitOrdersQueue(side).listIterator();
         if(it.hasNext()){
             Order order = it.next();
-            if(order instanceof StopLimitOrder && ((StopLimitOrder)order).checkActivation(lastTradePrice) ){
+            if(((StopLimitOrder)order).checkActivation(lastTradePrice) ){
                 it.remove();
                 return order;
             }
@@ -251,10 +238,17 @@ public class OrderBook {
         }
         order.queue();
         it.add(order);
+
     }
 
     public void enqueueInactiveStopLimitOrder(Order order){
         List<Order> queue = getInactiveStopLimitOrdersQueue(order.getSide());
+        Predicate<Order> condition = order::inactiveOrderQueuesBefore;
+        enqueueByQueue(order, queue, condition);
+    }
+
+    public void enqueueActiveStopLimitOrder(Order order){
+        List<Order> queue = getQueue(order.getSide());
         Predicate<Order> condition = order::inactiveOrderQueuesBefore;
         enqueueByQueue(order, queue, condition);
     }
