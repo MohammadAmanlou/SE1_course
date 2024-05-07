@@ -120,7 +120,7 @@ public class OrderHandler {
         if (enterOrderRq.getMinimumExecutionQuantity() > enterOrderRq.getQuantity() )
             errors.add(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY);
         if ((enterOrderRq.getStopPrice() != 0) &&  (enterOrderRq.getPeakSize() != 0))
-            errors.add(Message.STOP_LIMIT_ORDER_CANT_ICEBERG);
+            errors.add(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
         if ((enterOrderRq.getStopPrice() != 0) &&  (enterOrderRq.getMinimumExecutionQuantity() != 0))
             errors.add(Message.STOP_LIMIT_ORDER_CANT_MEQ);
         

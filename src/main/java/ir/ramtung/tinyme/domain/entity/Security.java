@@ -109,7 +109,7 @@ public class Security {
             throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_MEQ);
         }
         if ((order instanceof StopLimitOrder) && (updateOrderRq.getPeakSize() != 0) ){
-            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_ICEBERG);
+            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
         }
         if (order.getMinimumExecutionQuantity() != updateOrderRq.getMinimumExecutionQuantity())
             throw new InvalidRequestException(Message.CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY);

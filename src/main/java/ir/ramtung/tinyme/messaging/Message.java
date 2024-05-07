@@ -17,7 +17,7 @@ public class Message {
     public static final String MINIMUM_EXECUTION_QUANTITY_IS_NEGATIVE = "Minimum execution quantity is negative" ;
     public static final String MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY = "Minimum execution quantity is more than quantity";
     public static final String CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY = "Can not update order minimum execution quantity";
-    public static final String STOP_LIMIT_ORDER_CANT_ICEBERG = "stop limit order can not be an iceberg order";
+    public static final String STOP_LIMIT_ORDER_CANT_BE_ICEBERG = "stop limit order can not be an iceberg order";
     public static final String STOP_LIMIT_ORDER_CANT_MEQ = "stop limit order can not have MEQ";
     public static final String UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER = "updating rejected because it is not a stop limit order(it does not have stop price)";
     public static final String UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE ="updating rejected because the stop limit order is active";
