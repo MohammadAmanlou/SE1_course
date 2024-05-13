@@ -7,7 +7,7 @@ import ir.ramtung.tinyme.domain.service.Matcher;
 import ir.ramtung.tinyme.messaging.Message;
 import lombok.Builder;
 import lombok.Getter;
-
+import ir.ramtung.tinyme.messaging.request.MatchingState;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,6 +28,7 @@ public class Security {
     //private double lastTradePrice;
     @Builder.Default
     private ArrayList<MatchResult> matchResults = new ArrayList<>();
+    private MatchingState matchingState = MatchingState.CONTINUIOUS;
 
     public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
 
@@ -193,6 +194,16 @@ public class Security {
         }
         orderBook.enqueueInactiveStopLimitOrder(order);
         return MatchResult.inactiveOrderEnqueued();
+    }
+
+    private void ChangeMatchStateRq(MatchingState state){
+        if (state == MatchingState.CONTINUIOUS ){
+            matchingState =  MatchingState.AUCTION ;
+        }
+        else {
+            matchingState =  MatchingState.CONTINUIOUS ;
+        }
+        //calculate price 
     }
 
 }

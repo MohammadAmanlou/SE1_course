@@ -71,7 +71,7 @@ public class OrderBook {
     }
     
 
-    private LinkedList<Order> getQueue(Side side) {
+    public LinkedList<Order> getQueue(Side side) { //changed
         return side == Side.BUY ? buyQueue : sellQueue;
     }
 
