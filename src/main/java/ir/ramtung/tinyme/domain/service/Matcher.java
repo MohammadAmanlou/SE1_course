@@ -80,6 +80,18 @@ public class Matcher {
 
 
     public MatchResult auctionExecute(Order order){
+        if (order.getSide() == Side.BUY) {
+            if (!order.getBroker().hasEnoughCredit(order.getValue())) {
+                return MatchResult.notEnoughCredit();
+            }
+            order.getBroker().decreaseCreditBy(order.getValue());
+        }
+        if (order.getSide() == Side.SELL) {
+            if (!order.getShareholder().hasEnoughPositionsOn(order.getSecurity() , order.getQuantity())) {
+                return MatchResult.notEnoughPositions();
+            }
+            order.getBroker().decreaseCreditBy(order.getValue());
+        }
         order.getSecurity().getOrderBook().enqueue(order);
         // add to q
         order.getSecurity().updateIndicativeOpeningPrice();
