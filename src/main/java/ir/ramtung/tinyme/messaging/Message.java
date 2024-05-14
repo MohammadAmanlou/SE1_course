@@ -21,5 +21,7 @@ public class Message {
     public static final String STOP_LIMIT_ORDER_CANT_MEQ = "stop limit order can not have MEQ";
     public static final String UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER = "updating rejected because it is not a stop limit order(it does not have stop price)";
     public static final String UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE ="updating rejected because the stop limit order is active";
-    public static final String MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES = "MEQ is more than sum of quantities";                   
+    public static final String MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES = "MEQ is more than sum of quantities"; 
+    public static final String MEQ_IS_PROHIBITED_IN_AUCTION_MODE = "having meq for orders is prohibited in auction mode"  ;   
+    public static final String STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR = "new stopLimit order is prohibited in auction mode"   ;          
 }

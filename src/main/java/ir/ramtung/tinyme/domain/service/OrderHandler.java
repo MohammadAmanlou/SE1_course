@@ -9,6 +9,7 @@ import ir.ramtung.tinyme.messaging.event.*;
 import ir.ramtung.tinyme.messaging.request.ChangeMatchStateRq;
 import ir.ramtung.tinyme.messaging.request.DeleteOrderRq;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
+import ir.ramtung.tinyme.messaging.request.MatchingState;
 import ir.ramtung.tinyme.messaging.request.OrderEntryType;
 import ir.ramtung.tinyme.repository.BrokerRepository;
 import ir.ramtung.tinyme.repository.SecurityRepository;
@@ -46,16 +47,14 @@ public class OrderHandler {
             eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
             return;
         }
-        if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
+        if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER){
             if(matchResult.outcome() == MatchingOutcome.ORDER_ENQUEUED_IN_AUCTION_MODE){
                 Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
                 eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , enterOrderRq.getSecurityIsin() ,
                  currentSecurity.getIndicativeOpeningPrice(), currentSecurity.getHighestQuantity()));
             }
-            else{
-                eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
-            }
-            
+            eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
+        }
         else{
             eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
         }
@@ -154,6 +153,14 @@ public class OrderHandler {
             errors.add(Message.UNKNOWN_SHAREHOLDER_ID);
         if (enterOrderRq.getPeakSize() < 0 || enterOrderRq.getPeakSize() >= enterOrderRq.getQuantity())
             errors.add(Message.INVALID_PEAK_SIZE);
+        if(security.getMatchingState() == MatchingState.AUCTION){
+            if(enterOrderRq.getMinimumExecutionQuantity() > 0){
+                errors.add(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE);
+            }
+            if(enterOrderRq.getStopPrice() > 0){
+                errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR);
+            }
+        }
         if (!errors.isEmpty())
             throw new InvalidRequestException(errors);
     }
