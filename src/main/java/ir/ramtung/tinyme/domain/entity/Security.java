@@ -77,7 +77,7 @@ public class Security {
             return matchResult;
         }
         else {
-            MatchResult matchResult = matcher.auctionExecute(order);
+            MatchResult matchResult = matcher.auctionAddToQueue(order);
             return matchResult;
         }
         
@@ -216,14 +216,22 @@ public class Security {
         return MatchResult.inactiveOrderEnqueued();
     }
 
-    private void ChangeMatchStateRq(MatchingState state){
-        if (state == MatchingState.CONTINUOUS ){
+    public void ChangeMatchStateRq(MatchingState state , Matcher matcher){
+        if (state == MatchingState.CONTINUOUS &&  matchingState == MatchingState.AUCTION){
+            matchingState =  MatchingState.CONTINUOUS ;
+            // ؟؟؟؟؟؟؟
+        }
+        else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.AUCTION){
             matchingState =  MatchingState.AUCTION ;
+            // ??????
+        }
+        else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.CONTINUOUS){
+            matchingState =  MatchingState.AUCTION ;
+            // ??????
         }
         else {
             matchingState =  MatchingState.CONTINUOUS ;
         }
-        //calculate price 
     }
 
     public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices,LinkedList<Order> buyQueue,LinkedList<Order> sellQueue){  //  function that input : price , output: quantity  -- we update max quantity each time in loop

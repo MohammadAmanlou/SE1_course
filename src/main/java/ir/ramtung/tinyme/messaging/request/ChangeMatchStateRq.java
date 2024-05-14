@@ -3,9 +3,11 @@ package ir.ramtung.tinyme.messaging.request;
 import java.time.LocalDateTime;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
+@Getter
 @NoArgsConstructor
 public class ChangeMatchStateRq {
 

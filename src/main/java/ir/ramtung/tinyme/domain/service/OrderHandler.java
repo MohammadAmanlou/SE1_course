@@ -175,7 +175,12 @@ public class OrderHandler {
             throw new InvalidRequestException(errors);
     }
 
+
+
     public void handleChangeMatchStateRq(ChangeMatchStateRq changeMatchStateRq){
+       Security security = securityRepository.findSecurityByIsin(changeMatchStateRq.getSecurityIsin());
+       MatchingState matchingState = changeMatchStateRq.getState();
+       security.ChangeMatchStateRq(matchingState , matcher);
        
     }
 }
