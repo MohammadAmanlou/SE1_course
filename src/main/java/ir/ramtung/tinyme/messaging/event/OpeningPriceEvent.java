@@ -1,8 +1,16 @@
 package ir.ramtung.tinyme.messaging.event;
 
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-public class OpeningPriceEvent {
+@Data
+@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
+public class OpeningPriceEvent extends Event{
     private LocalDateTime time;
     private String securityIsin;
     private int openingPrice;

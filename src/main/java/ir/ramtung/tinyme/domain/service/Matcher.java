@@ -8,7 +8,7 @@ import java.util.ListIterator;
 
 @Service
 public class Matcher {
-    private int indicativeOpeningPrice =0 ; ///best auction price
+    
     
     public MatchResult match(Order newOrder) {
         OrderBook orderBook = newOrder.getSecurity().getOrderBook();
@@ -78,6 +78,18 @@ public class Matcher {
         }
     }
 
+
+    public MatchResult auctionExecute(Order order){
+        order.getSecurity().getOrderBook().enqueue(order);
+        // add to q
+        order.getSecurity().updateIndicativeOpeningPrice();
+        // update opening price
+        
+        // publish event ????????
+        return MatchResult.orderEnqueuedAuction();
+        // return exec
+    }
+
     public MatchResult execute(Order order) {
         MatchResult result = match(order);
         if (result.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT)
@@ -127,56 +139,5 @@ public class Matcher {
                  .mapToInt(Trade::getQuantity)
                  .sum();
     }
-
-    public int handleAuctionPrice(Security security ){
-
-        OrderBook orderBook = security.getOrderBook(); 
-        LinkedList<Order> buyQueue = orderBook.getQueue(Side.BUY);
-        LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
-        LinkedList <Integer> allOrdersPrices = new LinkedList<>() ;
-
-        for (Order buyOrder : buyQueue) {
-            allOrdersPrices.add(buyOrder.getPrice());
-        }
-        for (Order sellOrder : sellQueue) {
-            allOrdersPrices.add(sellOrder.getPrice());
-        }
-       
-        return findBestAuctionPrice(allOrdersPrices,buyQueue,sellQueue);
-    }
-
-
-    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices,LinkedList<Order> buyQueue,LinkedList<Order> sellQueue){  //  function that input : price , output: quantity  -- we update max quantity each time in loop
-        int highestQuantity=0;
-        int sumOfSellQuantities=0;
-        int sumOfBuyQuantities=0;
-        int highestQuantityForOnePrice = 0;
-        int correspondingPrice=0;
-        for(Integer orderPrice : allOrdersPrices){
-            for(Order sellOrder : sellQueue){
-                if(sellOrder.getPrice()<= orderPrice){
-                    sumOfSellQuantities += sellOrder.getQuantity();
-                }
-            }
-
-            for(Order buyOrder : buyQueue){
-                if(buyOrder.getPrice()<= orderPrice){
-                    sumOfBuyQuantities += buyOrder.getQuantity();
-                }
-            }
-
-            highestQuantityForOnePrice= Math.min(sumOfBuyQuantities,sumOfSellQuantities);
-
-            if (highestQuantityForOnePrice > highestQuantity) {
-                highestQuantity = highestQuantityForOnePrice;
-                correspondingPrice = orderPrice;
-            }
-
-        }
-
-        return correspondingPrice;
-
-    }
-
 
 }

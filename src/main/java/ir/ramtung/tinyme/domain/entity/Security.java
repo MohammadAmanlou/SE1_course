@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import ir.ramtung.tinyme.messaging.request.MatchingState;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.ObjectUtils.Null;
@@ -28,15 +29,26 @@ public class Security {
     //private double lastTradePrice;
     @Builder.Default
     private ArrayList<MatchResult> matchResults = new ArrayList<>();
-    private MatchingState matchingState = MatchingState.CONTINUIOUS;
+    private MatchingState matchingState = MatchingState.CONTINUOUS;
+    private int indicativeOpeningPrice = 0 ; ///best auction price
+    private int highestQuantity = 0;
 
-    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
-
+    private boolean checkPosition(EnterOrderRq enterOrderRq , Shareholder shareholder){
         if (enterOrderRq.getSide() == Side.SELL &&
                 !shareholder.hasEnoughPositionsOn(this,
                         orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity())) {
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
+    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
+        if(!checkPosition(enterOrderRq, shareholder)){
             return MatchResult.notEnoughPositions();
         }
+        
         Order order;
 
         if ((enterOrderRq.getPeakSize() == 0) && (enterOrderRq.getStopPrice() == 0)){
@@ -60,8 +72,16 @@ public class Security {
                     enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(), OrderStatus.NEW,enterOrderRq.getMinimumExecutionQuantity());
         }
 
-        MatchResult matchResult = matcher.execute(order);
-        return matchResult;
+        if(matchingState == MatchingState.CONTINUOUS){
+            MatchResult matchResult = matcher.execute(order);
+            return matchResult;
+        }
+        else {
+            MatchResult matchResult = matcher.auctionExecute(order);
+            return matchResult;
+        }
+        
+        
     }
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
@@ -197,14 +217,62 @@ public class Security {
     }
 
     private void ChangeMatchStateRq(MatchingState state){
-        if (state == MatchingState.CONTINUIOUS ){
+        if (state == MatchingState.CONTINUOUS ){
             matchingState =  MatchingState.AUCTION ;
         }
         else {
-            matchingState =  MatchingState.CONTINUIOUS ;
+            matchingState =  MatchingState.CONTINUOUS ;
         }
         //calculate price 
     }
+
+    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices,LinkedList<Order> buyQueue,LinkedList<Order> sellQueue){  //  function that input : price , output: quantity  -- we update max quantity each time in loop
+        int sumOfSellQuantities=0;
+        int sumOfBuyQuantities=0;
+        int highestQuantityForOnePrice = 0;
+        int correspondingPrice=0;
+        for(Integer orderPrice : allOrdersPrices){
+            for(Order sellOrder : sellQueue){
+                if(sellOrder.getPrice()<= orderPrice){
+                    sumOfSellQuantities += sellOrder.getQuantity();
+                }
+            }
+
+            for(Order buyOrder : buyQueue){
+                if(buyOrder.getPrice()<= orderPrice){
+                    sumOfBuyQuantities += buyOrder.getQuantity();
+                }
+            }
+
+            highestQuantityForOnePrice= Math.min(sumOfBuyQuantities,sumOfSellQuantities);
+
+            if (highestQuantityForOnePrice > highestQuantity) {
+                highestQuantity = highestQuantityForOnePrice;
+                correspondingPrice = orderPrice;
+            }
+
+        }
+
+        return correspondingPrice;
+
+    }
+
+    public int updateIndicativeOpeningPrice( ){
+
+        LinkedList<Order> buyQueue = orderBook.getQueue(Side.BUY);
+        LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
+        LinkedList <Integer> allOrdersPrices = new LinkedList<>() ;
+
+        for (Order buyOrder : buyQueue) {
+            allOrdersPrices.add(buyOrder.getPrice());
+        }
+        for (Order sellOrder : sellQueue) {
+            allOrdersPrices.add(sellOrder.getPrice());
+        }
+       
+        return findBestAuctionPrice(allOrdersPrices,buyQueue,sellQueue);
+    }
+
 
 }
 

@@ -15,6 +15,7 @@ import ir.ramtung.tinyme.repository.SecurityRepository;
 import ir.ramtung.tinyme.repository.ShareholderRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collector;
@@ -36,6 +37,36 @@ public class OrderHandler {
         this.matcher = matcher;
     }
 
+    private void publishOutcome(MatchResult matchResult , EnterOrderRq enterOrderRq){
+        if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
+            eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
+            return;
+        }
+        if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
+            eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+            return;
+        }
+        if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
+            if(matchResult.outcome() == MatchingOutcome.ORDER_ENQUEUED_IN_AUCTION_MODE){
+                Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
+                eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , enterOrderRq.getSecurityIsin() ,
+                 currentSecurity.getIndicativeOpeningPrice(), currentSecurity.getHighestQuantity()));
+            }
+            else{
+                eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
+            }
+            
+        else{
+            eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
+        }
+        if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
+            eventPublisher.publish(new OrderActivatedEvent(enterOrderRq.getRequestId() , enterOrderRq.getOrderId()));
+        }
+        if (!matchResult.trades().isEmpty()) {
+            eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+        }
+    }
+
     public void handleEnterOrder(EnterOrderRq enterOrderRq) {
         try {
             validateEnterOrderRq(enterOrderRq);
@@ -51,25 +82,7 @@ public class OrderHandler {
             else
                 matchResult = security.updateOrder(enterOrderRq, matcher);
 
-            if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
-                eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
-                return;
-            }
-            if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
-                eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
-                return;
-            }
-            if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
-                eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
-            else{
-                eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
-            }
-            if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
-                eventPublisher.publish(new OrderActivatedEvent(enterOrderRq.getRequestId() , enterOrderRq.getOrderId()));
-            }
-            if (!matchResult.trades().isEmpty()) {
-                eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
-            }
+            publishOutcome(matchResult, enterOrderRq);
             execInactiveStopLimitOrders(security , enterOrderRq);
 
         } catch (InvalidRequestException ex) {

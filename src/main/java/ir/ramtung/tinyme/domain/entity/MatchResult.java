@@ -28,6 +28,10 @@ public final class MatchResult {
     public static MatchResult inactiveOrderEnqueued() {
         return new MatchResult(MatchingOutcome.INACTIVE_ORDER_ENQUEUED, null, new LinkedList<>());
     }
+
+    public static MatchResult orderEnqueuedAuction() {
+        return new MatchResult(MatchingOutcome.ORDER_ENQUEUED_IN_AUCTION_MODE, null, new LinkedList<>());
+    }
     
     private MatchResult(MatchingOutcome outcome, Order remainder, LinkedList<Trade> trades) {
         this.outcome = outcome;

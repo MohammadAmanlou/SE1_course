@@ -2,7 +2,7 @@ package ir.ramtung.tinyme.messaging.request;
 
 public enum MatchingState {
     AUCTION,
-    CONTINUIOUS,
+    CONTINUOUS,
     
 
     
