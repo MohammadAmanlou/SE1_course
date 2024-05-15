@@ -33,8 +33,7 @@ public class Security {
     private int indicativeOpeningPrice = 0 ; ///best auction price
     private int highestQuantity = 0;
 
-    LinkedList<Order> buyQueue = orderBook.getQueue(Side.BUY);
-    LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
+
 
     private boolean checkPosition(EnterOrderRq enterOrderRq , Shareholder shareholder){
         if (enterOrderRq.getSide() == Side.SELL &&
@@ -240,13 +239,13 @@ public class Security {
 
     private void openingProcess(Matcher matcher){
         indicativeOpeningPrice = updateIndicativeOpeningPrice();
-        for(Order sellOrder : sellQueue){
+        for(Order sellOrder : orderBook.getSellQueue()){
             matcher.auctionExecute(sellOrder, indicativeOpeningPrice);
         }
     }
 
     private void continuousStateProcess(Matcher matcher){
-        for(Order sellOrder : sellQueue){
+        for(Order sellOrder : orderBook.getSellQueue()){
             matcher.execute(sellOrder);
         }
     }
@@ -257,13 +256,13 @@ public class Security {
         int highestQuantityForOnePrice = 0;
         int correspondingPrice=0;
         for(Integer orderPrice : allOrdersPrices){
-            for(Order sellOrder : sellQueue){
+            for(Order sellOrder : orderBook.getSellQueue()){
                 if(sellOrder.getPrice()<= orderPrice){
                     sumOfSellQuantities += sellOrder.getQuantity();
                 }
             }
 
-            for(Order buyOrder : buyQueue){
+            for(Order buyOrder : orderBook.getBuyQueue()){
                 if(buyOrder.getPrice()<= orderPrice){
                     sumOfBuyQuantities += buyOrder.getQuantity();
                 }
@@ -288,10 +287,10 @@ public class Security {
         // LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
         LinkedList <Integer> allOrdersPrices = new LinkedList<>() ;
 
-        for (Order buyOrder : buyQueue) {
+        for (Order buyOrder : orderBook.getBuyQueue()) {
             allOrdersPrices.add(buyOrder.getPrice());
         }
-        for (Order sellOrder : sellQueue) {
+        for (Order sellOrder : orderBook.getSellQueue()) {
             allOrdersPrices.add(sellOrder.getPrice());
         }
        
