@@ -33,6 +33,9 @@ public class Security {
     private int indicativeOpeningPrice = 0 ; ///best auction price
     private int highestQuantity = 0;
 
+    LinkedList<Order> buyQueue = orderBook.getQueue(Side.BUY);
+    LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
+
     private boolean checkPosition(EnterOrderRq enterOrderRq , Shareholder shareholder){
         if (enterOrderRq.getSide() == Side.SELL &&
                 !shareholder.hasEnoughPositionsOn(this,
@@ -218,23 +221,37 @@ public class Security {
 
     public void ChangeMatchStateRq(MatchingState state , Matcher matcher){
         if (state == MatchingState.CONTINUOUS &&  matchingState == MatchingState.AUCTION){
+            openingProcess(matcher);
             matchingState =  MatchingState.CONTINUOUS ;
-            // ؟؟؟؟؟؟؟
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.AUCTION){
+            openingProcess(matcher);
             matchingState =  MatchingState.AUCTION ;
-            // ??????
+
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.CONTINUOUS){
+            continuousStateProcess(matcher);
             matchingState =  MatchingState.AUCTION ;
-            // ??????
         }
         else {
             matchingState =  MatchingState.CONTINUOUS ;
         }
     }
 
-    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices,LinkedList<Order> buyQueue,LinkedList<Order> sellQueue){  //  function that input : price , output: quantity  -- we update max quantity each time in loop
+    private void openingProcess(Matcher matcher){
+        indicativeOpeningPrice = updateIndicativeOpeningPrice();
+        for(Order sellOrder : sellQueue){
+            matcher.auctionExecute(sellOrder, indicativeOpeningPrice);
+        }
+    }
+
+    private void continuousStateProcess(Matcher matcher){
+        for(Order sellOrder : sellQueue){
+            matcher.execute(sellOrder);
+        }
+    }
+
+    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices){
         int sumOfSellQuantities=0;
         int sumOfBuyQuantities=0;
         int highestQuantityForOnePrice = 0;
@@ -267,8 +284,8 @@ public class Security {
 
     public int updateIndicativeOpeningPrice( ){
 
-        LinkedList<Order> buyQueue = orderBook.getQueue(Side.BUY);
-        LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
+        // LinkedList<Order> buyQueue = orderBook.getQueue(Side.BUY);
+        // LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
         LinkedList <Integer> allOrdersPrices = new LinkedList<>() ;
 
         for (Order buyOrder : buyQueue) {
@@ -278,9 +295,10 @@ public class Security {
             allOrdersPrices.add(sellOrder.getPrice());
         }
        
-        return findBestAuctionPrice(allOrdersPrices,buyQueue,sellQueue);
+        return findBestAuctionPrice(allOrdersPrices);
     }
 
-
+    
 }
+
 
