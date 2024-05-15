@@ -82,7 +82,10 @@ public class OrderHandler {
                 matchResult = security.updateOrder(enterOrderRq, matcher);
 
             publishOutcome(matchResult, enterOrderRq);
-            execInactiveStopLimitOrders(security , enterOrderRq);
+            if(security.getMatchingState() == MatchingState.CONTINUOUS){
+                execInactiveStopLimitOrders(security , enterOrderRq);
+            }
+            
 
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), ex.getReasons()));
@@ -109,6 +112,60 @@ public class OrderHandler {
         }
     }
 
+    private void execInactiveStopLimitOrders(Security security ){
+        while (true) {
+            Order executableBuyOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.BUY);
+            Order executableSellOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.SELL);
+            if(executableBuyOrder == null && executableSellOrder == null){
+                break;
+            }
+            if (executableBuyOrder != null) {
+                executableBuyOrder.getBroker().increaseCreditBy(executableBuyOrder.getValue());
+                MatchResult matchResult = matcher.execute(executableBuyOrder);
+                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableBuyOrder.getStopPrice() > 0 ){
+                    eventPublisher.publish(new OrderActivatedEvent(executableBuyOrder.getRequestId() , executableBuyOrder.getOrderId()));
+                }
+                if(!matchResult.trades().isEmpty()){
+                    eventPublisher.publish(new OrderExecutedEvent(executableBuyOrder.getRequestId() , executableBuyOrder.getOrderId() , matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+                }
+            }
+            else if (executableSellOrder != null) {
+                executableSellOrder.getBroker().increaseCreditBy(executableSellOrder.getValue());
+                MatchResult matchResult = matcher.execute(executableSellOrder);
+                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableSellOrder.getStopPrice() > 0 ){
+                    eventPublisher.publish(new OrderActivatedEvent(executableSellOrder.getRequestId() , executableSellOrder.getOrderId()));
+                }
+                if(!matchResult.trades().isEmpty()){
+                    eventPublisher.publish(new OrderExecutedEvent(executableSellOrder.getRequestId() , executableSellOrder.getOrderId() , matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+                }
+            }
+            
+        }
+    }
+    private void execInactiveStopLimitOrdersAuction(Security security ){
+        while (true) {
+            Order executableBuyOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.BUY);
+            Order executableSellOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.SELL);
+            if(executableBuyOrder == null && executableSellOrder == null){
+                break;
+            }
+            if (executableBuyOrder != null) {
+                executableBuyOrder.getBroker().increaseCreditBy(executableBuyOrder.getValue());
+                MatchResult matchResult = matcher.auctionAddToQueue(executableBuyOrder);
+                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableBuyOrder.getStopPrice() > 0 ){
+                    eventPublisher.publish(new OrderActivatedEvent(executableBuyOrder.getRequestId() , executableBuyOrder.getOrderId()));
+                }
+            }
+            else if (executableSellOrder != null) {
+                executableSellOrder.getBroker().increaseCreditBy(executableSellOrder.getValue());
+                MatchResult matchResult = matcher.auctionAddToQueue(executableSellOrder);
+                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableSellOrder.getStopPrice() > 0 ){
+                    eventPublisher.publish(new OrderActivatedEvent(executableSellOrder.getRequestId() , executableSellOrder.getOrderId()));
+                }
+            }
+            
+        }
+    }
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
         try {
             validateDeleteOrderRq(deleteOrderRq);
@@ -180,7 +237,18 @@ public class OrderHandler {
     public void handleChangeMatchStateRq(ChangeMatchStateRq changeMatchStateRq){
        Security security = securityRepository.findSecurityByIsin(changeMatchStateRq.getSecurityIsin());
        MatchingState matchingState = changeMatchStateRq.getState();
-       security.ChangeMatchStateRq(matchingState , matcher);
-       
+       MatchResult matchResult = security.ChangeMatchStateRq(matchingState , matcher);
+       if (security.getMatchingState() == MatchingState.CONTINUOUS){
+            execInactiveStopLimitOrders(security );
+       }
+       else {
+            execInactiveStopLimitOrdersAuction(security );
+       }
+       if (!matchResult.trades().isEmpty()) {
+            for (Trade trade: matchResult.trades()){
+                eventPublisher.publish(new TradeEvent(LocalDateTime.now() , security.getIsin() , trade.getPrice() , trade.getQuantity() , trade.getBuy().getOrderId() , trade.getSell().getOrderId() ));
+            }
+        }
+       eventPublisher.publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , security.getMatchingState()));
     }
 }

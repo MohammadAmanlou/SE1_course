@@ -32,6 +32,10 @@ public final class MatchResult {
     public static MatchResult orderEnqueuedAuction() {
         return new MatchResult(MatchingOutcome.ORDER_ENQUEUED_IN_AUCTION_MODE, null, new LinkedList<>());
     }
+
+    public static MatchResult traded( List<Trade> trades) {
+        return new MatchResult(MatchingOutcome.TRADED, null, new LinkedList<>(trades));
+    }
     
     private MatchResult(MatchingOutcome outcome, Order remainder, LinkedList<Trade> trades) {
         this.outcome = outcome;

@@ -189,15 +189,6 @@ public class Security {
             MatchResult matchResult = matcher.execute(activatedOrder);
             activatedOrders.remove(activatedOrder);
             matchResults.add(matchResult);
-    
-            // if (matchResult.outcome() == MatchingOutcome.EXECUTED) {
-            //     if (matchResult.getPrice() > 0){
-            //         orderBook.setLastTradePrice(matchResult.getPrice());
-            //         orderBook.activateStopLimitOrders();
-            //     }
-
-
-            //}
         }
     }
 
@@ -218,30 +209,47 @@ public class Security {
         return MatchResult.inactiveOrderEnqueued();
     }
 
-    public void ChangeMatchStateRq(MatchingState state , Matcher matcher){
+    public MatchResult ChangeMatchStateRq(MatchingState state , Matcher matcher){
         if (state == MatchingState.CONTINUOUS &&  matchingState == MatchingState.AUCTION){
-            openingProcess(matcher);
+            MatchResult matchResult = openingProcess(matcher);
             matchingState =  MatchingState.CONTINUOUS ;
+            return matchResult;
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.AUCTION){
-            openingProcess(matcher);
+            MatchResult matchResult = openingProcess(matcher);
             matchingState =  MatchingState.AUCTION ;
+            return matchResult ;
 
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.CONTINUOUS){
-            continuousStateProcess(matcher);
             matchingState =  MatchingState.AUCTION ;
+            return null;
         }
         else {
             matchingState =  MatchingState.CONTINUOUS ;
+            return null;
         }
     }
 
-    private void openingProcess(Matcher matcher){
-        indicativeOpeningPrice = updateIndicativeOpeningPrice();
+    private MatchResult openingProcess(Matcher matcher){
+        //indicativeOpeningPrice = updateIndicativeOpeningPrice();
+        LinkedList<Trade> trades = new LinkedList<>();
         for(Order sellOrder : orderBook.getSellQueue()){
-            matcher.auctionExecute(sellOrder, indicativeOpeningPrice);
+            MatchResult matchResult = matcher.auctionExecute(sellOrder, indicativeOpeningPrice);
+            for (Trade trade : matchResult.trades() ){
+                trades.add(trade);
+            }
         }
+        for(Order sellOrder : orderBook.getSellQueue()){
+            if (sellOrder.getQuantity() == 0)
+                orderBook.getSellQueue().remove(sellOrder);
+        }
+        for(Order buyOrder : orderBook.getBuyQueue()){
+            if (buyOrder.getQuantity() == 0)
+                orderBook.getSellQueue().remove(buyOrder);
+        }
+        MatchResult matchResult = MatchResult.traded(trades);
+        return matchResult;
     }
 
     private void continuousStateProcess(Matcher matcher){
