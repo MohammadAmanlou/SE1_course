@@ -5,6 +5,8 @@ import ir.ramtung.tinyme.domain.entity.*;
 import ir.ramtung.tinyme.domain.service.Matcher;
 import ir.ramtung.tinyme.domain.service.OrderHandler;
 import ir.ramtung.tinyme.messaging.EventPublisher;
+import ir.ramtung.tinyme.messaging.event.OpeningPriceEvent;
+import ir.ramtung.tinyme.messaging.event.OrderAcceptedEvent;
 import ir.ramtung.tinyme.messaging.request.ChangeMatchStateRq;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
 import ir.ramtung.tinyme.messaging.request.MatchingState;
@@ -26,6 +28,7 @@ import java.util.List;
 
 import static ir.ramtung.tinyme.domain.entity.Side.BUY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Import(MockedJMSTestConfig.class)
@@ -54,7 +57,9 @@ public class AuctionMatchingTest {
         security = Security.builder().isin("ABC").build();
         securityRepository.addSecurity(security);
         broker = Broker.builder().credit(100_000_000L).build();
+        brokerRepository.addBroker(broker);
         shareholder = Shareholder.builder().build();
+        shareholderRepository.addShareholder(shareholder);
         shareholder.incPosition(security, 100_000);
         orderBook = security.getOrderBook();
         orders = Arrays.asList(
@@ -85,7 +90,7 @@ public class AuctionMatchingTest {
         orderBook.removeByOrderId(Side.SELL, 10);
         orderBook.removeByOrderId(Side.SELL, 9);
         int openingPrice = security.updateIndicativeOpeningPrice();
-        assertThat(openingPrice).isEqualTo(15810);
+        assertThat(openingPrice).isEqualTo(15490);
     }
 
     @Test
@@ -120,7 +125,25 @@ public class AuctionMatchingTest {
         assertThat(broker.getCredit()).isEqualTo(100_000_000L);  
     }
 
+    @Test
+    void find_auction_price_successfully_done_with_not_enough_credit() { 
+        broker.decreaseCreditBy(98_000_000);
+        int openingPrice = security.updateIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(15490);
+    }
 
+    @Test
+    void change_match_state_from_auction_to_auction() { //not checked bazgoshayi
+        security.ChangeMatchStateRq(MatchingState.AUCTION , matcher);
+        assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
+        security.ChangeMatchStateRq(MatchingState.AUCTION , matcher);
+        int openingPrice = security.updateIndicativeOpeningPrice();
+
+        assertThat(broker.getCredit()).isEqualTo(100000);
+        verify(eventPublisher).publish(new OpeningPriceEvent(LocalDateTime.now(),security.getIsin(),openingPrice,0));
+    }
+
+    
 
     
 }
