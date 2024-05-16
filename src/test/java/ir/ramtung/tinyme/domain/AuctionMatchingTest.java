@@ -7,6 +7,7 @@ import ir.ramtung.tinyme.domain.service.OrderHandler;
 import ir.ramtung.tinyme.messaging.EventPublisher;
 import ir.ramtung.tinyme.messaging.event.OpeningPriceEvent;
 import ir.ramtung.tinyme.messaging.event.OrderAcceptedEvent;
+import ir.ramtung.tinyme.messaging.event.OrderRejectedEvent;
 import ir.ramtung.tinyme.messaging.event.SecurityStateChangedEvent;
 import ir.ramtung.tinyme.messaging.request.ChangeMatchStateRq;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
@@ -204,6 +205,54 @@ public class AuctionMatchingTest {
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(openingPrice).isEqualTo(15700);
      }
+
+         @Test
+    void adding_new_MEQ_order_in_auction_state_successfully_rejected(){
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+            Side.BUY, 10, 700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 10 )); 
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE)));
+        
+    }
+
+    @Test
+    void adding_new_stop_limit_order_in_auction_state_successfully_rejected(){
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 500,
+            broker.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 10));
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR)));
+    }
+
+    @Test 
+    void adding_new_iceberg_order_in_auction_state_successfully_done(){
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 500,
+            broker.getBrokerId(), shareholder.getShareholderId(), 20, 0 , 0));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
+    }
+
+    @Test 
+    void adding_new_order_in_auction_state_successfully_done(){
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.BUY, 30, 500,
+            broker.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
+    }
+
+    @Test
+    void change_match_state_from_continuous_to_continuous(){
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
+        assertThat(security.getMatchingState()).isEqualTo(MatchingState.CONTINUOUS);
+        verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.CONTINUOUS));
+
+    }
+
+    // @Test 
+    // void change_match_state_from_auction_to_continuous(){
+    //     orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
+    //     assertThat(security.getMatchingState()).isEqualTo(MatchingState.CONTINUOUS);
+    //     verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.CONTINUOUS));
+    // }
 
     
 }
