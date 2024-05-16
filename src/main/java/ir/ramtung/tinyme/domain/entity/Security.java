@@ -310,7 +310,7 @@ public class Security {
                 bestOpenPrices.clear();
                 bestOpenPrices.add(i);
             }
-            else if (overallQuantityTraded == maxQuantityTraded){
+            else if (overallQuantityTraded == maxQuantityTraded && overallQuantityTraded != 0 ){
                 bestOpenPrices.add(i);
             }
         }
