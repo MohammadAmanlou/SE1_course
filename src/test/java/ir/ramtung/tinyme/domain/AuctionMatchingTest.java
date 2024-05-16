@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static ir.ramtung.tinyme.domain.entity.Side.BUY;
+import static ir.ramtung.tinyme.domain.entity.Side.SELL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
@@ -105,23 +106,28 @@ public class AuctionMatchingTest {
         verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.AUCTION));
     }
 
-    @Test
-    void do_auction_process_in_continuous_match_state_succesfully_fails() { //condition bezarim!!! not checked
-        security.ChangeMatchStateRq(MatchingState.CONTINUOUS , matcher);
+    
+
+    
+//shzd:
+
+   @Test
+    void do_auction_process_in_continuous_match_state_succesfully_fails() { //condition bezarim!!! not checked //qalateee
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
         int openingPrice = security.updateIndicativeOpeningPrice();
-        assertThat(openingPrice).isEqualTo(15820);
+        assertThat(openingPrice).isEqualTo(15490);
         assertThat(security.getMatchingState()).isEqualTo(MatchingState.CONTINUOUS);
     }
 
     @Test
     void no_trade_happens_in_auction_matching_state() { 
-        security.ChangeMatchStateRq(MatchingState.AUCTION, matcher);
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 400, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 )); 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 450));
+        0 , 0 , 0));
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(broker.getCredit()).isEqualTo(100_000_000L);  
     }
@@ -135,16 +141,69 @@ public class AuctionMatchingTest {
 
     @Test
     void change_match_state_from_auction_to_auction() { //not checked bazgoshayi
-        security.ChangeMatchStateRq(MatchingState.AUCTION , matcher);
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
-        security.ChangeMatchStateRq(MatchingState.AUCTION , matcher);
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         int openingPrice = security.updateIndicativeOpeningPrice();
 
-        assertThat(broker.getCredit()).isEqualTo(100000);
+        assertThat(broker.getCredit()).isEqualTo(10_000_000-(304*15700 +43*15500));
         verify(eventPublisher).publish(new OpeningPriceEvent(LocalDateTime.now(),security.getIsin(),openingPrice,0));
     }
 
     
+     @Test
+     void find_auction_price_change_successfully_done_when_some_orders_get_removed() {
+         OrderBook orderBook = security.getOrderBook();
+         orderBook.removeByOrderId(Side.SELL, 7);
+         int openingPrice = security.updateIndicativeOpeningPrice();
+         assertThat(openingPrice).isEqualTo(15400);
+     }
+     @Test
+     void no_opening_price_for_new_orders() {
+        orderBook.removeByOrderId(Side.BUY, 1);
+        orderBook.removeByOrderId(Side.BUY, 2);
+        orderBook.removeByOrderId(Side.BUY, 3);
+        orderBook.removeByOrderId(Side.BUY, 4);
+        orderBook.removeByOrderId(Side.BUY, 5);
+        orderBook.removeByOrderId(Side.SELL, 6);
+        orderBook.removeByOrderId(Side.SELL, 7);
+        orderBook.removeByOrderId(Side.SELL, 8);
+        orderBook.removeByOrderId(Side.SELL, 9);
+        orderBook.removeByOrderId(Side.SELL, 10);
+        orders = Arrays.asList(
+                new Order(11, security, BUY, 304, 15700, broker, shareholder,0),
+                new Order(12, security, BUY, 43, 15500, broker, shareholder,0),
+                new Order(13, security, SELL, 350, 15800, broker, shareholder,0),
+                new Order(14, security, SELL, 1000, 15820, broker, shareholder,0)
+        );
+        orders.forEach(order -> orderBook.enqueue(order));
+        int openingPrice = security.updateIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(0);
+     }
+
+
+     @Test
+     void opening_price_calculated_successfully_when_opening_price_is_on_boundary() {
+        orderBook.removeByOrderId(Side.BUY, 1);
+        orderBook.removeByOrderId(Side.BUY, 2);
+        orderBook.removeByOrderId(Side.BUY, 3);
+        orderBook.removeByOrderId(Side.BUY, 4);
+        orderBook.removeByOrderId(Side.BUY, 5);
+        orderBook.removeByOrderId(Side.SELL, 6);
+        orderBook.removeByOrderId(Side.SELL, 7);
+        orderBook.removeByOrderId(Side.SELL, 8);
+        orderBook.removeByOrderId(Side.SELL, 9);
+        orderBook.removeByOrderId(Side.SELL, 10);
+        orders = Arrays.asList(
+                new Order(1, security, BUY, 304, 15700, broker, shareholder,0),
+                new Order(2, security, BUY, 1000, 15400, broker, shareholder,0),
+                new Order(3, security, SELL, 350, 15700, broker, shareholder,0),
+                new Order(4, security, SELL, 65, 15820, broker, shareholder,0)
+        );
+        orders.forEach(order -> orderBook.enqueue(order));
+        int openingPrice = security.updateIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(15700);
+     }
 
     
 }
