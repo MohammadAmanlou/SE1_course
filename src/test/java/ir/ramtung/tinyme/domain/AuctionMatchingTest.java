@@ -7,6 +7,7 @@ import ir.ramtung.tinyme.domain.service.OrderHandler;
 import ir.ramtung.tinyme.messaging.EventPublisher;
 import ir.ramtung.tinyme.messaging.event.OpeningPriceEvent;
 import ir.ramtung.tinyme.messaging.event.OrderAcceptedEvent;
+import ir.ramtung.tinyme.messaging.event.SecurityStateChangedEvent;
 import ir.ramtung.tinyme.messaging.request.ChangeMatchStateRq;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
 import ir.ramtung.tinyme.messaging.request.MatchingState;
@@ -79,14 +80,13 @@ public class AuctionMatchingTest {
     }
     
     @Test
-    void find_auction_price_successfully_done(){
+    void find_auction_price_successfully_done(){ //checked
        int openingPrice = security.updateIndicativeOpeningPrice();
        assertThat(openingPrice).isEqualTo(15490);
     }
 
     @Test
-    void find_auction_price_successfully_done_when_some_orders_get_removed() {
-        OrderBook orderBook = security.getOrderBook();
+    void find_auction_price_successfully_done_when_some_orders_get_removed() { //checked
         orderBook.removeByOrderId(Side.SELL, 10);
         orderBook.removeByOrderId(Side.SELL, 9);
         int openingPrice = security.updateIndicativeOpeningPrice();
@@ -100,8 +100,10 @@ public class AuctionMatchingTest {
 
     @Test
     void change_match_state_from_continuous_to_auction() { //checked
-        security.ChangeMatchStateRq(MatchingState.AUCTION , matcher);
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
+        verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.AUCTION));
+
     }
 
     @Test
