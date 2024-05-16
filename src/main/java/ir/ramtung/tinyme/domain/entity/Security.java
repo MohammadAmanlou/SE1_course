@@ -29,8 +29,11 @@ public class Security {
     //private double lastTradePrice;
     @Builder.Default
     private ArrayList<MatchResult> matchResults = new ArrayList<>();
+    @Builder.Default
     private MatchingState matchingState = MatchingState.CONTINUOUS;
+    @Builder.Default
     private int indicativeOpeningPrice = 0 ; ///best auction price
+    @Builder.Default
     private int highestQuantity = 0;
 
 
@@ -275,24 +278,18 @@ public class Security {
                     sumOfBuyQuantities += buyOrder.getQuantity();
                 }
             }
-
             highestQuantityForOnePrice= Math.min(sumOfBuyQuantities,sumOfSellQuantities);
 
             if (highestQuantityForOnePrice > highestQuantity) {
                 highestQuantity = highestQuantityForOnePrice;
                 correspondingPrice = orderPrice;
             }
-
         }
-
         return correspondingPrice;
-
     }
 
     public int updateIndicativeOpeningPrice( ){
-
-        // LinkedList<Order> buyQueue = orderBook.getQueue(Side.BUY);
-        // LinkedList<Order> sellQueue = orderBook.getQueue(Side.SELL);
+        //if?
         LinkedList <Integer> allOrdersPrices = new LinkedList<>() ;
 
         for (Order buyOrder : orderBook.getBuyQueue()) {
