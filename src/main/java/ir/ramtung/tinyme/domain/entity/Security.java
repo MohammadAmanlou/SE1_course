@@ -261,31 +261,66 @@ public class Security {
         }
     }
 
-    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices){
-        int sumOfSellQuantities=0;
-        int sumOfBuyQuantities=0;
-        int highestQuantityForOnePrice = 0;
-        int correspondingPrice=0;
-        for(Integer orderPrice : allOrdersPrices){
-            for(Order sellOrder : orderBook.getSellQueue()){
-                if(sellOrder.getPrice()<= orderPrice){
-                    sumOfSellQuantities += sellOrder.getQuantity();
-                }
-            }
+    private int getTotalQuantityInOrderList(LinkedList <Order> orders){
+        int  sumQuantity = 0;
+        for (Order order : orders){
+            sumQuantity += order.getTotalQuantity();
+        }
+        return sumQuantity;
+    }
 
-            for(Order buyOrder : orderBook.getBuyQueue()){
-                if(buyOrder.getPrice()<= orderPrice){
-                    sumOfBuyQuantities += buyOrder.getQuantity();
-                }
-            }
-            highestQuantityForOnePrice= Math.min(sumOfBuyQuantities,sumOfSellQuantities);
-
-            if (highestQuantityForOnePrice > highestQuantity) {
-                highestQuantity = highestQuantityForOnePrice;
-                correspondingPrice = orderPrice;
+    private int findOverallQuantityTraded(int selectedOpenPrice ){
+        LinkedList <Order> selectedBuyOrders = new LinkedList<>();
+        for (Order order : orderBook.getBuyQueue()){
+            if(order.getPrice() >= selectedOpenPrice){
+                selectedBuyOrders.add(order);
             }
         }
-        return correspondingPrice;
+        LinkedList <Order> selectedSellOrders = new LinkedList<>();
+        for (Order order : orderBook.getSellQueue()){
+            if(order.getPrice() <= selectedOpenPrice){
+                selectedSellOrders.add(order);
+            }
+        }
+        int sumQuantityInSellQueue = getTotalQuantityInOrderList(selectedSellOrders);
+        int sumQuantityInBuyQueue = getTotalQuantityInOrderList(selectedBuyOrders);
+        return Math.min(sumQuantityInSellQueue , sumQuantityInBuyQueue);
+    }
+
+    private int findClosestToLastTradePrice(LinkedList<Integer> openPrices ){
+        int minDistance = Integer.MAX_VALUE;
+        int minElement = Integer.MAX_VALUE;
+        for (int price : openPrices){
+            int distance = Math.abs(price - (int)orderBook.getLastTradePrice());
+            if(distance < minDistance){
+                minDistance = distance;
+                minElement = price;
+            }
+            else if (distance == minDistance && price < minElement){
+                minElement = price;
+            }
+        }
+        return minElement;
+    }
+
+    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices){
+        int min = Collections.min(allOrdersPrices);
+        int max = Collections.max(allOrdersPrices);
+        int maxQuantityTraded = 0;
+        LinkedList<Integer> bestOpenPrices = new LinkedList<>();
+        for ( int i = min ; i <= max ; i++){
+            int overallQuantityTraded = findOverallQuantityTraded(i);
+            if(overallQuantityTraded > maxQuantityTraded){
+                maxQuantityTraded = overallQuantityTraded;
+                bestOpenPrices.clear();
+                bestOpenPrices.add(i);
+            }
+            else if (overallQuantityTraded == maxQuantityTraded){
+                bestOpenPrices.add(i);
+            }
+        }
+        highestQuantity = maxQuantityTraded;
+        return findClosestToLastTradePrice(bestOpenPrices );
     }
 
     public int updateIndicativeOpeningPrice( ){
