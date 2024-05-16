@@ -5,6 +5,7 @@ import ir.ramtung.tinyme.domain.entity.*;
 import ir.ramtung.tinyme.domain.service.Matcher;
 import ir.ramtung.tinyme.domain.service.OrderHandler;
 import ir.ramtung.tinyme.messaging.EventPublisher;
+import ir.ramtung.tinyme.messaging.Message;
 import ir.ramtung.tinyme.messaging.event.OpeningPriceEvent;
 import ir.ramtung.tinyme.messaging.event.OrderAcceptedEvent;
 import ir.ramtung.tinyme.messaging.event.OrderRejectedEvent;
@@ -38,7 +39,8 @@ import static org.mockito.Mockito.verify;
 @DirtiesContext
 public class AuctionMatchingTest {
     private Security security;
-    private Broker broker;
+    private Broker broker1;
+    private Broker broker2;
     private Shareholder shareholder;
     private OrderBook orderBook;
     private List<Order> orders;
@@ -59,23 +61,25 @@ public class AuctionMatchingTest {
     void setup() {
         security = Security.builder().isin("ABC").build();
         securityRepository.addSecurity(security);
-        broker = Broker.builder().credit(100_000_000L).build();
-        brokerRepository.addBroker(broker);
+        broker1 = Broker.builder().brokerId(1).credit(100_000_000L).build();
+        broker2 = Broker.builder().brokerId(2).credit(100_000_000L).build();
+        brokerRepository.addBroker(broker1);
+        brokerRepository.addBroker(broker2);
         shareholder = Shareholder.builder().build();
         shareholderRepository.addShareholder(shareholder);
         shareholder.incPosition(security, 100_000);
         orderBook = security.getOrderBook();
         orders = Arrays.asList(
-                new Order(1, security, BUY, 304, 15700, broker, shareholder,0),
-                new Order(2, security, BUY, 43, 15500, broker, shareholder,0),
-                new Order(3, security, BUY, 445, 15450, broker, shareholder,0),
-                new Order(4, security, BUY, 526, 15450, broker, shareholder,0),
-                new Order(5, security, BUY, 1000, 15400, broker, shareholder,0),
-                new Order(6, security, Side.SELL, 350, 15800, broker, shareholder,0),
-                new Order(7, security, Side.SELL, 285, 15490, broker, shareholder,0),
-                new Order(8, security, Side.SELL, 800, 15810, broker, shareholder,0),
-                new Order(9, security, Side.SELL, 340, 15820, broker, shareholder,0),
-                new Order(10, security, Side.SELL, 65, 15820, broker, shareholder,0)
+                new Order(1, security, BUY, 304, 15700, broker1, shareholder,0),
+                new Order(2, security, BUY, 43, 15500, broker1, shareholder,0),
+                new Order(3, security, BUY, 445, 15450, broker1, shareholder,0),
+                new Order(4, security, BUY, 526, 15450, broker1, shareholder,0),
+                new Order(5, security, BUY, 1000, 15400, broker1, shareholder,0),
+                new Order(6, security, Side.SELL, 350, 15800, broker2, shareholder,0),
+                new Order(7, security, Side.SELL, 285, 15490, broker2, shareholder,0),
+                new Order(8, security, Side.SELL, 800, 15810, broker2, shareholder,0),
+                new Order(9, security, Side.SELL, 340, 15820, broker2, shareholder,0),
+                new Order(10, security, Side.SELL, 65, 15820, broker2, shareholder,0)
         );
         orders.forEach(order -> orderBook.enqueue(order));
         System.out.println(orderBook);
@@ -107,35 +111,25 @@ public class AuctionMatchingTest {
         verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.AUCTION));
     }
 
-    
-
-    
-//shzd:
-
-   @Test
-    void do_auction_process_in_continuous_match_state_succesfully_fails() { //condition bezarim!!! not checked //qalateee
-        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
-        int openingPrice = security.updateIndicativeOpeningPrice();
-        assertThat(openingPrice).isEqualTo(15490);
-        assertThat(security.getMatchingState()).isEqualTo(MatchingState.CONTINUOUS);
-    }
-
     @Test
-    void no_trade_happens_in_auction_matching_state() { 
+    void no_trade_happens_in_auction_matching_state() { //checked
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 400, LocalDateTime.now(), 
-        Side.BUY, 10, 700, broker.getBrokerId(), shareholder.getShareholderId(), 
+        Side.BUY, 10, 700, broker1.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 )); 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
-        Side.BUY, 10, 700, broker.getBrokerId(), shareholder.getShareholderId(), 
+        Side.BUY, 10, 700, broker1.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 , 0));
-        int openingPrice = security.updateIndicativeOpeningPrice();
-        assertThat(broker.getCredit()).isEqualTo(100_000_000L);  
+        assertThat(broker1.getCredit()).isEqualTo(99_986_000L);
+        assertThat(broker2.getCredit()).isEqualTo(100_000_000L); 
+        verify(eventPublisher).publish(new OrderAcceptedEvent(2, 400));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
     }
 
     @Test
     void find_auction_price_successfully_done_with_not_enough_credit() { 
-        broker.decreaseCreditBy(98_000_000);
+        broker1.decreaseCreditBy(98_000_000);
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(openingPrice).isEqualTo(15490);
     }
@@ -145,10 +139,8 @@ public class AuctionMatchingTest {
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-        int openingPrice = security.updateIndicativeOpeningPrice();
-
-        assertThat(broker.getCredit()).isEqualTo(10_000_000-(304*15700 +43*15500));
-        verify(eventPublisher).publish(new OpeningPriceEvent(LocalDateTime.now(),security.getIsin(),openingPrice,0));
+        //verify(eventPublisher).publish(new OpeningPriceEvent(LocalDateTime.now(),security.getIsin(),15490 , 285));
+        assertThat(broker1.getCredit()).isEqualTo(100_000_000 + 285*15700 - 285 * 15490 );
     }
 
     

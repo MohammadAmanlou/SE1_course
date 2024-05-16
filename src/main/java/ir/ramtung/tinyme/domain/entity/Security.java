@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import ir.ramtung.tinyme.messaging.request.MatchingState;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -236,21 +237,32 @@ public class Security {
     }
 
     private MatchResult openingProcess(Matcher matcher){
-        //indicativeOpeningPrice = updateIndicativeOpeningPrice();
+        indicativeOpeningPrice = updateIndicativeOpeningPrice();
         LinkedList<Trade> trades = new LinkedList<>();
-        for(Order sellOrder : orderBook.getSellQueue()){
-            MatchResult matchResult = matcher.auctionExecute(sellOrder, indicativeOpeningPrice);
+        int max = orderBook.getSellQueue().size();
+        for(int i = 0 ; i < max ; i++){
+            MatchResult matchResult = matcher.auctionExecute(orderBook.getSellQueue().get(i), indicativeOpeningPrice);
+            if (matchResult.trades().size() == 0){
+                continue;
+            }
             for (Trade trade : matchResult.trades() ){
                 trades.add(trade);
             }
         }
-        for(Order sellOrder : orderBook.getSellQueue()){
-            if (sellOrder.getQuantity() == 0)
-                orderBook.getSellQueue().remove(sellOrder);
+        Iterator<Order> sellIterator = orderBook.getSellQueue().iterator();
+        while (sellIterator.hasNext()) {
+            Order sellOrder = sellIterator.next();
+            if (sellOrder.getQuantity() == 0) {
+                sellIterator.remove();
+            }
         }
-        for(Order buyOrder : orderBook.getBuyQueue()){
-            if (buyOrder.getQuantity() == 0)
-                orderBook.getSellQueue().remove(buyOrder);
+        
+        Iterator<Order> buyIterator = orderBook.getBuyQueue().iterator();
+        while (buyIterator.hasNext()) {
+            Order buyOrder = buyIterator.next();
+            if (buyOrder.getQuantity() == 0) {
+                buyIterator.remove();
+            }
         }
         MatchResult matchResult = MatchResult.traded(trades);
         return matchResult;
@@ -328,8 +340,11 @@ public class Security {
         for (Order sellOrder : orderBook.getSellQueue()) {
             allOrdersPrices.add(sellOrder.getPrice());
         }
-       
-        return findBestAuctionPrice(allOrdersPrices);
+        int bestAuctionPrice = findBestAuctionPrice(allOrdersPrices);
+        if (bestAuctionPrice == Integer.MAX_VALUE){
+            bestAuctionPrice = 0;
+        }
+        return bestAuctionPrice;
     }
 
     

@@ -244,6 +244,9 @@ public class OrderHandler {
        else {
             execInactiveStopLimitOrdersAuction(security );
        }
+       if(matchResult != null){
+        eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now(),security.getIsin(),security.getIndicativeOpeningPrice() , security.getHighestQuantity() ));
+       }
        if (matchResult != null && !matchResult.trades().isEmpty()) {
             for (Trade trade: matchResult.trades()){
                 eventPublisher.publish(new TradeEvent(LocalDateTime.now() , security.getIsin() , trade.getPrice() , trade.getQuantity() , trade.getBuy().getOrderId() , trade.getSell().getOrderId() ));
