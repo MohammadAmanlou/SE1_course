@@ -225,6 +225,7 @@ public class Security {
 
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.CONTINUOUS){
+            this.updateIndicativeOpeningPrice();
             matchingState =  MatchingState.AUCTION ;
             return null;
         }
@@ -253,12 +254,6 @@ public class Security {
         }
         MatchResult matchResult = MatchResult.traded(trades);
         return matchResult;
-    }
-
-    private void continuousStateProcess(Matcher matcher){
-        for(Order sellOrder : orderBook.getSellQueue()){
-            matcher.execute(sellOrder);
-        }
     }
 
     private int getTotalQuantityInOrderList(LinkedList <Order> orders){
