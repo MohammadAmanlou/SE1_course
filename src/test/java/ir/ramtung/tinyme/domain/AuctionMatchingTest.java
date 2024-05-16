@@ -245,6 +245,52 @@ public class AuctionMatchingTest {
     //     assertThat(security.getMatchingState()).isEqualTo(MatchingState.CONTINUOUS);
     //     verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.CONTINUOUS));
     // }
+        
+    //shzd:
+    @Test
+    void default_opening_price_equals_to_zero(){ 
+        orderBook.removeByOrderId(Side.BUY, 1);
+        orderBook.removeByOrderId(Side.BUY, 2);
+        orderBook.removeByOrderId(Side.BUY, 3);
+        orderBook.removeByOrderId(Side.BUY, 4);
+        orderBook.removeByOrderId(Side.BUY, 5);
+        orderBook.removeByOrderId(Side.SELL, 6);
+        orderBook.removeByOrderId(Side.SELL, 7);
+        orderBook.removeByOrderId(Side.SELL, 8);
+        orderBook.removeByOrderId(Side.SELL, 9);
+        orderBook.removeByOrderId(Side.SELL, 10);
+       int openingPrice = security.updateIndicativeOpeningPrice();
+       assertThat(openingPrice).isEqualTo(0);
+    }
 
+    @Test
+    void find_auction_price_successfully_done_when_some_orders_get_updated() { 
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 7, LocalDateTime.now(), Side.SELL, 285, 15500, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+        int openingPrice = security.updateIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(15500);
+    }
+/*
+    @Test
+    void stop_limit_order_is_activated_and_opening_price_get_calculated_for_auction_matching_state(){ //few_sell_stop_limit_order_get_activated_after_one_order_has_been_traded
+        Broker broker1 = Broker.builder().brokerId(1).credit(100_000).build();
+        Broker broker2 = Broker.builder().brokerId(2).credit(100_000).build();
+        Broker broker3 = Broker.builder().brokerId(3).credit(520_000).build();
+        Order matchingSellOrder2 = new Order(110, security, Side.SELL, 50, 400, broker1, shareholder,0);
+        security.getOrderBook().enqueue(matchingSellOrder2);       
+   
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
+        Side.SELL, 10, 600, broker3.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 400));
+
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(5, "ABC", 600, LocalDateTime.now(), 
+        Side.BUY , 60, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 ));
+
+        assertThat(broker1.getCredit()).isEqualTo(100_000 );
+        assertThat(broker2.getCredit()).isEqualTo(100_000 );
+        assertThat(broker3.getCredit()).isEqualTo(520_000);  
+
+    } */
     
 }
