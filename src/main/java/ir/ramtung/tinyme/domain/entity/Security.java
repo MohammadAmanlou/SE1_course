@@ -229,29 +229,32 @@ public class Security {
 
     public MatchResult ChangeMatchStateRq(MatchingState state , Matcher matcher){
         if (state == MatchingState.CONTINUOUS &&  matchingState == MatchingState.AUCTION){
+            updateIndicativeOpeningPrice();
             MatchResult matchResult = openingProcess(matcher);
             matchingState =  MatchingState.CONTINUOUS ;
             return matchResult;
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.AUCTION){
+            updateIndicativeOpeningPrice();
             MatchResult matchResult = openingProcess(matcher);
             matchingState =  MatchingState.AUCTION ;
             return matchResult ;
 
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.CONTINUOUS){
-            this.updateIndicativeOpeningPrice();
+            updateIndicativeOpeningPrice();
             matchingState =  MatchingState.AUCTION ;
             return null;
         }
         else {
+            updateIndicativeOpeningPrice();
             matchingState =  MatchingState.CONTINUOUS ;
             return null;
         }
     }
 
     private MatchResult openingProcess(Matcher matcher){
-        indicativeOpeningPrice = updateIndicativeOpeningPrice();
+        updateIndicativeOpeningPrice();
         LinkedList<Trade> trades = new LinkedList<>();
         int max = orderBook.getSellQueue().size();
         for(int i = 0 ; i < max ; i++){
@@ -362,6 +365,7 @@ public class Security {
         if (bestAuctionPrice == Integer.MAX_VALUE){
             bestAuctionPrice = 0;
         }
+        indicativeOpeningPrice = bestAuctionPrice;
         return bestAuctionPrice;
     }
 
