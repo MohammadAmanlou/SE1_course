@@ -257,7 +257,8 @@ public class AuctionMatchingTest {
 
     @Test
     void find_auction_price_successfully_done_when_some_orders_get_updated() { 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 7, LocalDateTime.now(), Side.SELL, 285, 15500, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 7, LocalDateTime.now(), Side.SELL, 285, 15500, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(openingPrice).isEqualTo(15500);
     }

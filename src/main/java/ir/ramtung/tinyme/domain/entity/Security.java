@@ -174,15 +174,21 @@ public class Security {
         else{
             orderBook.removeByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
         }
-
-        MatchResult matchResult = matcher.execute(order);
-        if (matchResult.outcome() != MatchingOutcome.EXECUTED) {
-            orderBook.enqueueActiveStopLimitOrder(originalOrder);
-            if (updateOrderRq.getSide() == Side.BUY) {
-                originalOrder.getBroker().decreaseCreditBy(originalOrder.getValue());
+        if(matchingState == MatchingState.CONTINUOUS){
+            MatchResult matchResult = matcher.execute(order);
+            if (matchResult.outcome() != MatchingOutcome.EXECUTED) {
+                orderBook.enqueueActiveStopLimitOrder(originalOrder);
+                if (updateOrderRq.getSide() == Side.BUY) {
+                    originalOrder.getBroker().decreaseCreditBy(originalOrder.getValue());
+                }
             }
+            return matchResult;
         }
-        return matchResult;
+        else{
+            MatchResult matchResult = matcher.auctionAddToQueue(order);
+            return matchResult;
+        }
+
     }
 
     public void processActivatedStopLimitOrders(Matcher matcher) {
@@ -311,6 +317,10 @@ public class Security {
     }
 
     public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices){
+        if (allOrdersPrices.size() == 0){
+            return 0;
+        }
+        System.out.println(allOrdersPrices);
         int min = Collections.min(allOrdersPrices);
         int max = Collections.max(allOrdersPrices);
         int maxQuantityTraded = 0;

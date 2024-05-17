@@ -90,7 +90,8 @@ public class Matcher {
 
         order.getSecurity().getOrderBook().enqueue(order);
         order.getSecurity().updateIndicativeOpeningPrice();
-        return MatchResult.orderEnqueuedAuction();    }
+        return MatchResult.orderEnqueuedAuction();
+    }
 
     public MatchResult execute(Order order) {
         MatchResult result = match(order);
