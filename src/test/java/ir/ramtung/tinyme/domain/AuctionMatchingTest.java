@@ -240,6 +240,17 @@ public class AuctionMatchingTest {
     }
 
     @Test
+    void one_side_orders_opening_price_equals_to_zero(){ 
+        orderBook.removeByOrderId(Side.SELL, 6);
+        orderBook.removeByOrderId(Side.SELL, 7);
+        orderBook.removeByOrderId(Side.SELL, 8);
+        orderBook.removeByOrderId(Side.SELL, 9);
+        orderBook.removeByOrderId(Side.SELL, 10);
+       int openingPrice = security.updateIndicativeOpeningPrice();
+       assertThat(openingPrice).isEqualTo(0);
+    }
+
+    @Test
     void find_auction_price_successfully_done_when_some_orders_get_updated() { 
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 7, LocalDateTime.now(), Side.SELL, 285, 15500, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
@@ -285,7 +296,7 @@ public class AuctionMatchingTest {
 
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
 
-        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 200, LocalDateTime.now(),
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(2, "ABC", 200, LocalDateTime.now(),
                 Side.BUY, 10, 150, broker1.getBrokerId(), shareholder.getShareholderId(),
                 0 , 0 , 200));
 

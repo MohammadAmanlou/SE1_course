@@ -14,6 +14,8 @@ import ir.ramtung.tinyme.messaging.request.OrderEntryType;
 import ir.ramtung.tinyme.repository.BrokerRepository;
 import ir.ramtung.tinyme.repository.SecurityRepository;
 import ir.ramtung.tinyme.repository.ShareholderRepository;
+
+import org.springframework.boot.availability.ReadinessState;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -177,7 +179,12 @@ public class OrderHandler {
             validateDeleteOrderRq(deleteOrderRq);
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
             security.deleteOrder(deleteOrderRq);
-            eventPublisher.publish(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
+            if(security.getMatchingState() == MatchingState.AUCTION && security.getOrderBook().findInActiveByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId()) != null){
+                eventPublisher.publish(new OrderRejectedEvent(2, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE)));
+            }
+            else{
+                eventPublisher.publish(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
+            }
             if(security.getMatchingState() == MatchingState.AUCTION){
                 security.updateIndicativeOpeningPrice();
                 eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , security.getIsin() , security.getIndicativeOpeningPrice() , security.getHighestQuantity()));
@@ -225,7 +232,13 @@ public class OrderHandler {
                 errors.add(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE);
             }
             if(enterOrderRq.getStopPrice() > 0){
-                errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR);
+                if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER){
+                    errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR);
+                }
+                else{
+                    errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_UPDATE);
+                }
+                
             }
         }
         if (!errors.isEmpty())

@@ -97,10 +97,18 @@ public class Security {
         }
         if (order == null)
             throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
-        if (order.getSide() == Side.BUY)
+        if (order.getSide() == Side.BUY )
             order.getBroker().increaseCreditBy(order.getValue());
         if (!orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId())){
-            orderBook.removeInActiveStopLimitByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
+            if (matchingState == MatchingState.CONTINUOUS){
+                orderBook.removeInActiveStopLimitByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
+            }
+            else{
+                if (order.getSide() == Side.BUY ){
+                    order.getBroker().decreaseCreditBy(order.getValue());
+                }
+            }
+            
         }
     }
 
