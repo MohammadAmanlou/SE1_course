@@ -441,6 +441,98 @@ public class AuctionMatchingTest {
         assertThat(openingPrice).isEqualTo(15490);
     }
 
+    @Test
+    void trading_happens_in_auction_to_auction_and_opening_price_update_successfully(){
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 11, LocalDateTime.now(), 
+           Side.BUY, 30, 15000, broker1.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 12, LocalDateTime.now(), 
+           Side.BUY, 20, 14000, broker1.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 13, LocalDateTime.now(), 
+           Side.SELL, 10, 15800, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
 
+       int openingPrice = security.updateIndicativeOpeningPrice();
+       assertThat(openingPrice).isEqualTo(15490);
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       int openingPrice2 = security.updateIndicativeOpeningPrice();
+       assertThat(openingPrice2).isEqualTo(0);
+    }
+
+    @Test
+    void trading_happens_in_auction_to_auction_and_(){
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 11, LocalDateTime.now(), 
+           Side.BUY, 30, 15000, broker1.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 12, LocalDateTime.now(), 
+           Side.BUY, 20, 14000, broker1.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 13, LocalDateTime.now(), 
+           Side.SELL, 10, 15400, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+       
+       assertThat(broker1.getCredit()).isEqualTo(99270000);
+       assertThat(broker2.getCredit()).isEqualTo(100000000);
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       //15400
+
+       //15490
+       //event
+    }
+
+   @Test
+   void update_price_for_sell_order_in_auction_state_successful() {
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 2, 
+           LocalDateTime.now(), Side.BUY, 43, 16000, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+   
+       assertThat(security.getOrderBook().findByOrderId(Side.BUY , 2).getPrice()).isEqualTo(16000);
+   }
+
+   @Test
+   void update_price_for_buy_order_in_auction_state_successful() {
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 10, 
+           LocalDateTime.now(), Side.SELL, 65, 16000, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+   
+       assertThat(security.getOrderBook().findByOrderId(Side.SELL , 10).getPrice()).isEqualTo(16000);
+   }
+
+   @Test
+   void add_new_order_in_auction_and_tradable_quantity_does_not_change(){
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 11, LocalDateTime.now(), 
+           Side.BUY, 300, 15400, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+       security.getOrderBook().setLastTradePrice(10000);
+       assertThat(security.getHighestQuantity()).isEqualTo(285);
+       
+   }
+
+   @Test
+   void add_new_order_in_auction_and_tradable_quantity_does_change(){
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 11, LocalDateTime.now(), 
+           Side.BUY, 300, 15800, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+       security.getOrderBook().setLastTradePrice(10000);
+       assertThat(security.getHighestQuantity()).isEqualTo(300);
+       
+   }
+   @Test
+   void add_new_iceberg_order_in_auction_and_find_tradable_quantity_successfully_done1(){
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 11, LocalDateTime.now(), 
+           Side.BUY, 300, 15800, broker1.getBrokerId(), shareholder.getShareholderId(), 100 , 0 , 0));
+       security.getOrderBook().setLastTradePrice(10000);
+       assertThat(security.getHighestQuantity()).isEqualTo(300);
+   }
+
+   @Test
+   void add_new_iceberg_order_in_auction_and_find_tradable_quantity_successfully_done(){
+       security.getOrderBook().setLastTradePrice(100000);
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 11, LocalDateTime.now(), 
+           Side.BUY, 285, 15800, broker1.getBrokerId(), shareholder.getShareholderId(), 100 , 0 , 0));
+       assertThat(security.getHighestQuantity()).isEqualTo(285);
+       assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
+   }
     
 }
