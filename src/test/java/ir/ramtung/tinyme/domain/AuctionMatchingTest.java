@@ -315,23 +315,6 @@ public class AuctionMatchingTest {
          verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE)));
      }
  
-     @Test
-     void can_not_add_buy_stop_limit_order_in_auction_matching_state(){
-         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
-         Side.BUY, 10, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 
-         0 , 0 , 300));
- 
-     }
- 
-     @Test
-     void can_not_add_sell_stop_limit_order_in_auction_matching_state(){
-         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
-         Side.SELL, 10, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 
-         0 , 0 , 300));
- 
-     }
      
      @Test
      void many_opening_prices_available_but_the_one_that_is_closer_to_last_trade_prices_gets_accepted(){  
@@ -528,5 +511,47 @@ public class AuctionMatchingTest {
        assertThat(security.getHighestQuantity()).isEqualTo(285);
        assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
    }
+
+   @Test
+   void adding_buy_stop_limit_order_in_auction_matching_state_successfully_rejected(){
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+          Side.BUY, 40, 500, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 300));
+
+      verify(eventPublisher).publish(new OrderRejectedEvent(1,100,List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR)));
+
+   }
+
+   @Test
+   void adding_sell_stop_limit_order_in_auction_matching_state_successfully_rejected(){
+       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+          Side.SELL, 10, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 300));
+
+      verify(eventPublisher).publish(new OrderRejectedEvent(1,200,List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR)));
+      
+   }
+   
+      @Test
+ void update_quantity_for_buy_order_in_auction_state_successful() {
+  
+     orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+     orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 1, 
+         LocalDateTime.now(), Side.BUY, 500, 15700, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+ 
+     assertThat(security.getOrderBook().findByOrderId(Side.BUY , 1).getQuantity()).isEqualTo(500);
+     assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
+ }
+
+ @Test
+ void update_quantity_for_sell_order_in_auction_state_successful() {
+  
+     orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+     orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 10, 
+         LocalDateTime.now(), Side.SELL, 40, 15820, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+ 
+     assertThat(security.getOrderBook().findByOrderId(Side.SELL , 10).getQuantity()).isEqualTo(40);
+     assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
+ }
     
 }
