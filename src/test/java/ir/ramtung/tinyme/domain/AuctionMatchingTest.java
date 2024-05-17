@@ -628,7 +628,7 @@ public class AuctionMatchingTest {
     }
 
     @Test
-    void check_auction_match_with_given_opening_price_with_one_buy_icebergOrder(){
+    void check_auction_match_with_given_opening_price_with_one_buy_icebergOrder(){ //checked
         orders.forEach(order -> orderBook.removeByOrderId(order.getSide(), order.getOrderId()));
         orders = Arrays.asList(
                 new Order(1, security, Side.BUY, 304, 15700, broker1, shareholder, 0),
@@ -645,12 +645,16 @@ public class AuctionMatchingTest {
         assertThat(openingPrice).isEqualTo(15550);
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         verify(eventPublisher,times(2)).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
+        verify(eventPublisher).publish(new OpeningPriceEvent("ABC", 15550, 405));
+        verify(eventPublisher).publish(new TradeEvent("ABC", 15550, 304, 1, 9));
+        verify(eventPublisher).publish(new TradeEvent("ABC", 15550, 36, 3, 9));
+        verify(eventPublisher).publish(new TradeEvent("ABC", 15550, 14, 3, 10));
+        verify(eventPublisher).publish(new TradeEvent("ABC", 15550, 1, 3, 10));
         assertThat(broker1.getCredit()).isEqualTo(100_000_000L + 304 * (15700 - 15550) +  101 * (15650 - 15550));
         assertThat(broker2.getCredit()).isEqualTo(100_000_000L + 405 * (15550));
         assertThat(security.getOrderBook().getBuyQueue().size()).isEqualTo(2);
         assertThat(security.getOrderBook().getBuyQueue().getFirst().getOrderId()).isEqualTo(3);
         assertThat(security.getOrderBook().getSellQueue().size()).isEqualTo(0);
-
     }
     
 }
