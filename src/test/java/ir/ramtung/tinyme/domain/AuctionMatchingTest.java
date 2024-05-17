@@ -474,13 +474,14 @@ public class AuctionMatchingTest {
    }
 
    @Test
-   void add_new_iceberg_order_in_auction_and_find_tradable_quantity_new_order_without_impact_successfully_done(){
+   void add_new_iceberg_order_in_auction_and_find_tradable_quantity_new_order_without_impact_successfully_done(){ //checked
         security.getOrderBook().setLastTradePrice(10000);
        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+       verify(eventPublisher).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 11, LocalDateTime.now(), 
-           Side.BUY, 100, 15800, broker1.getBrokerId(), shareholder.getShareholderId(), 100 , 0 , 0));
-       assertThat(security.getHighestQuantity()).isEqualTo(285);
-       assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15490);
+           Side.BUY, 101, 15800, broker1.getBrokerId(), shareholder.getShareholderId(), 100 , 0 , 0));
+       verify(eventPublisher).publish(new OpeningPriceEvent("ABC",15490,285)); 
+       verify(eventPublisher).publish(new OrderAcceptedEvent(1 , 11)); 
    }
 
    @Test
@@ -499,21 +500,21 @@ public class AuctionMatchingTest {
 
    @Test
    void adding_buy_stop_limit_order_in_auction_matching_state_successfully_rejected(){ // checked
-       orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-       orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
           Side.BUY, 40, 500, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 300));
-      verify(eventPublisher ).publish(new SecurityStateChangedEvent("ABC",MatchingState.AUCTION));
-      verify(eventPublisher).publish(new OrderRejectedEvent(1,100,List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR)));
+        verify(eventPublisher ).publish(new SecurityStateChangedEvent("ABC",MatchingState.AUCTION));
+        verify(eventPublisher).publish(new OrderRejectedEvent(1,100,List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR)));
    }
    
-@Test
-void adding_sell_stop_limit_order_in_auction_matching_state_successfully_rejected(){ // checked
-    orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-    orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
-       Side.SELL, 10, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 300));
-   verify(eventPublisher ).publish(new SecurityStateChangedEvent("ABC",MatchingState.AUCTION));
-   verify(eventPublisher).publish(new OrderRejectedEvent(1,200,List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR)));
-}
+    @Test
+    void adding_sell_stop_limit_order_in_auction_matching_state_successfully_rejected(){ // checked
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), 
+        Side.SELL, 10, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 300));
+        verify(eventPublisher ).publish(new SecurityStateChangedEvent("ABC",MatchingState.AUCTION));
+        verify(eventPublisher).publish(new OrderRejectedEvent(1,200,List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR)));
+    }
 
  @Test
  void update_quantity_for_buy_order_in_auction_state_successfully_done() { // checked
@@ -538,35 +539,33 @@ void adding_sell_stop_limit_order_in_auction_matching_state_successfully_rejecte
  }
  
 
- @Test
- void one_buy_order_entered_shareholder_doese_not_have_enough_position(){  //checked
- shareholder.decPosition(security, 100_000);
- orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
- Side.SELL, 20000000, 900, broker1.getBrokerId(), shareholder.getShareholderId(), 
- 0 , 0 , 0));
- verify(eventPublisher).publish(new OrderRejectedEvent(1,100, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
- }
+    @Test
+    void one_buy_order_entered_shareholder_doese_not_have_enough_position(){  //checked
+        shareholder.decPosition(security, 100_000);
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+        Side.SELL, 20000000, 900, broker1.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 0));
+        verify(eventPublisher).publish(new OrderRejectedEvent(1,100, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+    }
  
  @Test
- void one_sell_order_entered_shareholder_doese_not_have_enough_position(){ //checked
- shareholder.decPosition(security, 100_000);
- orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
- Side.SELL, 20, 900, broker1.getBrokerId(), shareholder.getShareholderId(), 
- 0 , 0 , 0));
- verify(eventPublisher).publish(new OrderRejectedEvent(1,100, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+    void one_sell_order_entered_shareholder_doese_not_have_enough_position(){ //checked
+        shareholder.decPosition(security, 100_000);
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+        Side.SELL, 20, 900, broker1.getBrokerId(), shareholder.getShareholderId(), 
+        0 , 0 , 0));
+        verify(eventPublisher).publish(new OrderRejectedEvent(1,100, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
  }
 
- @Test
-  void can_not_update_buy_order_with_MEQ_in_auction_matching_state(){ //checked
-      orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-      orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
-      Side.BUY, 50, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,40));
-
-      orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 50, 16000,
-             broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 ));
-
-      verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE)));
-      verify(eventPublisher).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
+    @Test
+    void can_not_update_buy_order_with_MEQ_in_auction_matching_state(){ //checked
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
+        Side.BUY, 50, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,40));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.BUY, 50, 16000,
+        broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 ));
+        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE)));
+        verify(eventPublisher).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
   }
 
   @Test
@@ -574,15 +573,12 @@ void adding_sell_stop_limit_order_in_auction_matching_state_successfully_rejecte
      orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
      orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
      Side.SELL, 50, 550, broker1.getBrokerId(), shareholder.getShareholderId(), 0,40));
-
      orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 100, LocalDateTime.now(), Side.SELL, 50, 1000,
             broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 ));
-
      verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE)));
      verify(eventPublisher).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
  }
   
-
   @Test
  void three_times_changing_matching_state_and_publishing_opening_price_event_after_that(){ // checked
      orders.forEach(order -> orderBook.removeByOrderId(order.getSide(), order.getOrderId()));
@@ -591,34 +587,26 @@ void adding_sell_stop_limit_order_in_auction_matching_state_successfully_rejecte
              new Order(2, security, Side.BUY, 300, 16000, broker1, shareholder, 0)
              );
      orders.forEach(order -> orderBook.enqueue(order));
-
      orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
      verify(eventPublisher).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
-     
      orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 3, LocalDateTime.now(), 
          Side.SELL, 100, 16000, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
      verify(eventPublisher).publish(new OrderAcceptedEvent(1, 3));
-     
      orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
      verify(eventPublisher,times(2)).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
-
      orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
      verify(eventPublisher,times(3)).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
-     
      orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 4, LocalDateTime.now(), 
          Side.SELL, 285, 15815, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
      verify(eventPublisher).publish(new OrderAcceptedEvent(2, 4));
-
      orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 5, LocalDateTime.now(), 
          Side.SELL, 285, 15800, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
      verify(eventPublisher).publish(new OrderAcceptedEvent(3, 5));
-
      verify(eventPublisher,times(2)).publish(new OpeningPriceEvent("ABC", 16000, 300));
      verify(eventPublisher).publish(new TradeEvent("ABC", 16000, 200,2,1));
      verify(eventPublisher).publish(new TradeEvent("ABC", 16000, 100,2,3));
      verify(eventPublisher,times(2)).publish(new OpeningPriceEvent("ABC", 0, 0));
      verify(eventPublisher).publish(new OpeningPriceEvent("ABC", 0, 300));
- 
  }
     @Test
     void check_auction_match_with_given_opening_price_with_one_buy_icebergOrder(){ //checked
@@ -649,5 +637,4 @@ void adding_sell_stop_limit_order_in_auction_matching_state_successfully_rejecte
         assertThat(security.getOrderBook().getBuyQueue().getFirst().getOrderId()).isEqualTo(3);
         assertThat(security.getOrderBook().getSellQueue().size()).isEqualTo(0);
     }
-    
 }
