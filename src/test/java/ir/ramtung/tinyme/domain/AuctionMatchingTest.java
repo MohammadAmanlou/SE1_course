@@ -267,20 +267,22 @@ public class AuctionMatchingTest {
     //new
     @Test 
     void change_match_state_from_auction_to_continuous(){
-        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(openingPrice).isEqualTo(15490);
-        assertThat(security.getMatchingState()).isEqualTo(MatchingState.CONTINUOUS);
+        assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
+        verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.AUCTION));
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
         verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.CONTINUOUS));
-        verify(eventPublisher).publish(new OpeningPriceEvent(LocalDateTime.now() , security.getIsin(), openingPrice, tradableQuantity));
+        verify(eventPublisher).publish(new OpeningPriceEvent());
 
     }
 
     @Test
-    void deleteing_inactive_stop_limit_order_in_auction_state_successfully_rejected(){
+    void deleting_inactive_stop_limit_order_in_auction_state_successfully_rejected(){
         
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
-                Side.BUY, 10, 100, broker.getBrokerId(), shareholder.getShareholderId(),
+                Side.BUY, 10, 100, broker1.getBrokerId(), shareholder.getShareholderId(),
                 0 , 0 , 200));
 
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
@@ -295,13 +297,13 @@ public class AuctionMatchingTest {
     void updating_inactive_stop_limit_order_in_auction_state_successfully_rejected(){
         
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
-                Side.BUY, 10, 100, broker.getBrokerId(), shareholder.getShareholderId(),
+                Side.BUY, 10, 100, broker1.getBrokerId(), shareholder.getShareholderId(),
                 0 , 0 , 200));
 
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
 
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 200, LocalDateTime.now(),
-                Side.BUY, 10, 150, broker.getBrokerId(), shareholder.getShareholderId(),
+                Side.BUY, 10, 150, broker1.getBrokerId(), shareholder.getShareholderId(),
                 0 , 0 , 200));
 
         verify(eventPublisher).publish(new OrderRejectedEvent(2, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_UPDATE)));
