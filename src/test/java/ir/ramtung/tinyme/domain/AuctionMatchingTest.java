@@ -550,10 +550,9 @@ public class AuctionMatchingTest {
     void one_buy_order_entered_shareholder_doese_not_have_enough_position(){ 
     shareholder.decPosition(security, 100_000);
     orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
-        Side.BUY, 20, 900, broker1.getBrokerId(), shareholder.getShareholderId(), 
+        Side.SELL, 20000000, 900, broker1.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 , 0));
-        
-        verify(eventPublisher).publish(new OrderRejectedEvent(1,100, List.of(Message.BUYER_HAS_NOT_ENOUGH_POSITIONS));
+        verify(eventPublisher).publish(new OrderRejectedEvent(1,100, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
         // Order order = new Order(11, security, BUY, 2000, 15820, broker1, shareholder,0);
         // MatchResult result = matcher.execute(order);
         // assertThat(result.outcome()).isEqualTo(MatchingOutcome.NOT_ENOUGH_POSITIONS);
