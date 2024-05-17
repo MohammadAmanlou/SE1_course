@@ -68,7 +68,15 @@ public class OrderHandler {
         }
         if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
             Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
-            eventPublisher.publish(new OrderActivatedEvent(currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId()).getRequestId() , enterOrderRq.getOrderId()));
+            if (currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId()) != null){
+                eventPublisher.publish(new OrderActivatedEvent(currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId()).getRequestId(), enterOrderRq.getOrderId()));
+            }
+            else if(currentSecurity.getOrderBook().findByOrderId(matchResult.trades().getLast().getBuy().getSide() , matchResult.trades().getLast().getBuy().getOrderId()) != null){
+                eventPublisher.publish(new OrderActivatedEvent(matchResult.trades().getLast().getSell().getRequestId(), enterOrderRq.getOrderId()));
+            }
+            else{
+                eventPublisher.publish(new OrderActivatedEvent(matchResult.trades().getLast().getBuy().getRequestId(), enterOrderRq.getOrderId()));
+            }
         }
         if (!matchResult.trades().isEmpty() && securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
             eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
