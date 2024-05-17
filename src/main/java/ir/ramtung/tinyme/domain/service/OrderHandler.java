@@ -165,7 +165,6 @@ public class OrderHandler {
                 }
             }
             else if (executableSellOrder != null) {
-                executableSellOrder.getBroker().increaseCreditBy(executableSellOrder.getValue());
                 MatchResult matchResult = matcher.auctionAddToQueue(executableSellOrder);
                 if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableSellOrder.getStopPrice() > 0 ){
                     eventPublisher.publish(new OrderActivatedEvent(executableSellOrder.getRequestId() , executableSellOrder.getOrderId()));
