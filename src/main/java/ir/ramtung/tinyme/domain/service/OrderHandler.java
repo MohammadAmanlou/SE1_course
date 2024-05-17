@@ -56,12 +56,18 @@ public class OrderHandler {
             eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
         }
         else{
+            Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
             eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
+            if(currentSecurity.getMatchingState() == MatchingState.AUCTION){
+                currentSecurity.updateIndicativeOpeningPrice();
+                eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , enterOrderRq.getSecurityIsin() ,
+                     currentSecurity.getIndicativeOpeningPrice(), currentSecurity.getHighestQuantity()));
+            }
         }
         if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
             eventPublisher.publish(new OrderActivatedEvent(enterOrderRq.getRequestId() , enterOrderRq.getOrderId()));
         }
-        if (!matchResult.trades().isEmpty()) {
+        if (!matchResult.trades().isEmpty() && securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
             eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
         }
     }
@@ -172,6 +178,10 @@ public class OrderHandler {
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
             security.deleteOrder(deleteOrderRq);
             eventPublisher.publish(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
+            if(security.getMatchingState() == MatchingState.AUCTION){
+                security.updateIndicativeOpeningPrice();
+                eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , security.getIsin() , security.getIndicativeOpeningPrice() , security.getHighestQuantity()));
+            }
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), ex.getReasons()));
         }
