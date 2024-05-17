@@ -29,6 +29,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import static ir.ramtung.tinyme.domain.entity.Side.BUY;
@@ -493,6 +494,7 @@ public class AuctionMatchingTest {
        assertThat(security.getHighestQuantity()).isEqualTo(300);
        
    }
+   //need to be modified
    @Test
    void add_new_iceberg_order_in_auction_and_find_tradable_quantity_successfully_done1(){
        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
@@ -501,7 +503,7 @@ public class AuctionMatchingTest {
        security.getOrderBook().setLastTradePrice(10000);
        assertThat(security.getHighestQuantity()).isEqualTo(300);
    }
-
+   //need to be modified
    @Test
    void add_new_iceberg_order_in_auction_and_find_tradable_quantity_successfully_done(){
        security.getOrderBook().setLastTradePrice(100000);
@@ -532,26 +534,53 @@ public class AuctionMatchingTest {
       
    }
    
-      @Test
- void update_quantity_for_buy_order_in_auction_state_successful() {
+    @Test
+    void update_quantity_for_buy_order_in_auction_state_successful() {
   
-     orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-     orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 1, 
-         LocalDateTime.now(), Side.BUY, 500, 15700, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
- 
-     assertThat(security.getOrderBook().findByOrderId(Side.BUY , 1).getQuantity()).isEqualTo(500);
-     assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
- }
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 1, 
+            LocalDateTime.now(), Side.BUY, 500, 15700, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
 
- @Test
- void update_quantity_for_sell_order_in_auction_state_successful() {
+        assertThat(security.getOrderBook().findByOrderId(Side.BUY , 1).getQuantity()).isEqualTo(500);
+        assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
+    }
+
+    @Test
+    void update_quantity_for_sell_order_in_auction_state_successful() {
   
-     orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-     orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 10, 
-         LocalDateTime.now(), Side.SELL, 40, 15820, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
- 
-     assertThat(security.getOrderBook().findByOrderId(Side.SELL , 10).getQuantity()).isEqualTo(40);
-     assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
- }
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 10, 
+            LocalDateTime.now(), Side.SELL, 40, 15820, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+
+        assertThat(security.getOrderBook().findByOrderId(Side.SELL , 10).getQuantity()).isEqualTo(40);
+        assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15800);
+    }
+    //check assert value
+    @Test
+    void find_IOP_with_one_candidate_closest_and_lower_to_last_trade_price_succesffully_done(){
+        
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 11, 
+            LocalDateTime.now(), Side.BUY, 300, 15800, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
+
+        security.getOrderBook().setLastTradePrice(15820);
+        int openingPrice = security.updateIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(15700);
+    }
+    //check
+    @Test
+    void find_IOP_with_two_candidate_closest_to_last_trade_price_succesffully_done(){
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        security.getOrderBook().setLastTradePrice(10000);
+        LinkedList<Integer> prices = new LinkedList<>();
+        prices.add(10005);
+        prices.add(9995);
+        prices.add(9990);
+        prices.add(10010);
+        int openingPrice = security.updateIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(9995);
+    }
+
+    
     
 }
