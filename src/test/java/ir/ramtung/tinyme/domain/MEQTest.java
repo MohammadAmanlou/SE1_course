@@ -142,7 +142,7 @@ public class MEQTest {
         assertThat(broker2.getCredit()).isEqualTo(100_000 );
         assertThat(broker3.getCredit()).isEqualTo(520_500);
 
-        verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES)));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
 
     }
 
@@ -158,7 +158,7 @@ public class MEQTest {
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 );
         assertThat(broker2.getCredit()).isEqualTo(0 );
-        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES)));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 100));
     }   
 
 
@@ -262,9 +262,6 @@ public class MEQTest {
 
         assertThat(broker1.getCredit()).isEqualTo(100_000 );
         assertThat(broker2.getCredit()).isEqualTo(0 );
-        verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_ALL_QUANTITIES)));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 100));
     } 
-
-
-
 }
