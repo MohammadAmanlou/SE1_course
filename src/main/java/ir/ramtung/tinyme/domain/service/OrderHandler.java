@@ -52,7 +52,7 @@ public class OrderHandler {
         if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER){
             if(matchResult.outcome() == MatchingOutcome.ORDER_ENQUEUED_IN_AUCTION_MODE){
                 Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
-                eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , enterOrderRq.getSecurityIsin() ,
+                eventPublisher.publish(new OpeningPriceEvent(enterOrderRq.getSecurityIsin() ,
                  currentSecurity.getIndicativeOpeningPrice(), currentSecurity.getHighestQuantity()));
             }
             eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
@@ -62,7 +62,7 @@ public class OrderHandler {
             eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
             if(currentSecurity.getMatchingState() == MatchingState.AUCTION){
                 currentSecurity.updateIndicativeOpeningPrice();
-                eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , enterOrderRq.getSecurityIsin() ,
+                eventPublisher.publish(new OpeningPriceEvent( enterOrderRq.getSecurityIsin() ,
                      currentSecurity.getIndicativeOpeningPrice(), currentSecurity.getHighestQuantity()));
             }
         }
@@ -187,7 +187,7 @@ public class OrderHandler {
             }
             if(security.getMatchingState() == MatchingState.AUCTION){
                 security.updateIndicativeOpeningPrice();
-                eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now() , security.getIsin() , security.getIndicativeOpeningPrice() , security.getHighestQuantity()));
+                eventPublisher.publish(new OpeningPriceEvent(security.getIsin() , security.getIndicativeOpeningPrice() , security.getHighestQuantity()));
             }
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), ex.getReasons()));
@@ -268,13 +268,13 @@ public class OrderHandler {
             execInactiveStopLimitOrdersAuction(security );
        }
        if(matchResult != null){
-        eventPublisher.publish(new OpeningPriceEvent(LocalDateTime.now(),security.getIsin(),security.getIndicativeOpeningPrice() , security.getHighestQuantity() ));
+        eventPublisher.publish(new OpeningPriceEvent(security.getIsin(),security.getIndicativeOpeningPrice() , security.getHighestQuantity() ));
        }
        if (matchResult != null && !matchResult.trades().isEmpty()) {
             for (Trade trade: matchResult.trades()){
-                eventPublisher.publish(new TradeEvent(LocalDateTime.now() , security.getIsin() , trade.getPrice() , trade.getQuantity() , trade.getBuy().getOrderId() , trade.getSell().getOrderId() ));
+                eventPublisher.publish(new TradeEvent(security.getIsin() , trade.getPrice() , trade.getQuantity() , trade.getBuy().getOrderId() , trade.getSell().getOrderId() ));
             }
         }
-       eventPublisher.publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , security.getMatchingState()));
+       eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin() , security.getMatchingState()));
     }
 }

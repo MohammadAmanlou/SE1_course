@@ -265,11 +265,10 @@ public class AuctionMatchingTest {
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(openingPrice).isEqualTo(15490);
         assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
-        verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.AUCTION));
+        verify(eventPublisher).publish(new SecurityStateChangedEvent(security.getIsin() , MatchingState.AUCTION));
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
-        verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.CONTINUOUS));
-        verify(eventPublisher).publish(new OpeningPriceEvent());
-
+        verify(eventPublisher).publish(new SecurityStateChangedEvent(security.getIsin() , MatchingState.CONTINUOUS));
+        verify(eventPublisher).publish(new OpeningPriceEvent(security.getIsin() , 15490 , 285));
     }
 
     @Test

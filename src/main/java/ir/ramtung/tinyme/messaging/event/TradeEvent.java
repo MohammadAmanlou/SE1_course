@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TradeEvent extends Event{
-    private LocalDateTime time;
     private String securityIsin;
     private int price;
     private int quantity;

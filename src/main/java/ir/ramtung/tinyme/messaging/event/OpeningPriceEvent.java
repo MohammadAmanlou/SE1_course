@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OpeningPriceEvent extends Event{
-    private LocalDateTime time;
     private String securityIsin;
     private int openingPrice;
     private int tradableQuantity;
