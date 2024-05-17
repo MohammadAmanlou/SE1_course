@@ -591,5 +591,66 @@ public class AuctionMatchingTest {
 
         verify(eventPublisher).publish(new OrderRejectedEvent(1, 100, List.of(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE)));
      }
+
+     @Test
+    void twice_changing_matching_state_and_publishing_opening_price_event_after_that(){
+
+        orders.forEach(order -> orderBook.removeByOrderId(order.getSide(), order.getOrderId()));
+        orders = Arrays.asList(
+                new Order(1, security, Side.SELL, 200, 16000, broker2, shareholder, 0),
+                new Order(2, security, Side.BUY, 300, 16000, broker1, shareholder, 0)
+                );
+        orders.forEach(order -> orderBook.enqueue(order));
+
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        verify(eventPublisher).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
+        
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 3, LocalDateTime.now(), 
+            Side.SELL, 100, 16000, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 3));
+        
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        verify(eventPublisher,times(2)).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
+
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        verify(eventPublisher,times(3)).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
+        
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 4, LocalDateTime.now(), 
+            Side.SELL, 285, 15815, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(2, 4));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 5, LocalDateTime.now(), 
+            Side.SELL, 285, 15800, broker2.getBrokerId(), shareholder.getShareholderId(), 0 , 0 , 0));
+        verify(eventPublisher).publish(new OrderAcceptedEvent(3, 5));
+
+        verify(eventPublisher,times(2)).publish(new OpeningPriceEvent("ABC", 16000, 300));
+        verify(eventPublisher,times(2)).publish(new OpeningPriceEvent("ABC", 0, 0));
+    }
+
+    @Test
+    void check_auction_match_with_given_opening_price_with_one_buy_icebergOrder(){
+        orders.forEach(order -> orderBook.removeByOrderId(order.getSide(), order.getOrderId()));
+        orders = Arrays.asList(
+                new Order(1, security, Side.BUY, 304, 15700, broker1, shareholder, 0),
+                new IcebergOrder(3 , security , Side.BUY , 200 , 15650 , broker1 ,shareholder , 50, 0),
+                new Order(2, security, Side.BUY, 43, 15600, broker1, shareholder, 0),
+                new Order(9, security, Side.SELL, 340, 15400, broker2, shareholder, 0),
+                new Order(10, security, Side.SELL, 65, 15500, broker2, shareholder, 0)
+                );
+        orders.forEach(order -> orderBook.enqueue(order));
+        orderBook.setLastTradePrice(15550);
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        verify(eventPublisher,times(1)).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
+        int openingPrice = security.getIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(15550);
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+        verify(eventPublisher,times(2)).publish(new SecurityStateChangedEvent( "ABC",MatchingState.AUCTION));
+        assertThat(broker1.getCredit()).isEqualTo(100_000_000L + 304 * (15700 - 15550) +  101 * (15650 - 15550));
+        assertThat(broker2.getCredit()).isEqualTo(100_000_000L + 405 * (15550));
+        assertThat(security.getOrderBook().getBuyQueue().size()).isEqualTo(2);
+        assertThat(security.getOrderBook().getBuyQueue().getFirst().getOrderId()).isEqualTo(3);
+        assertThat(security.getOrderBook().getSellQueue().size()).isEqualTo(0);
+
+    }
     
 }
