@@ -11,6 +11,7 @@ import ir.ramtung.tinyme.messaging.event.OrderAcceptedEvent;
 import ir.ramtung.tinyme.messaging.event.OrderRejectedEvent;
 import ir.ramtung.tinyme.messaging.event.SecurityStateChangedEvent;
 import ir.ramtung.tinyme.messaging.request.ChangeMatchStateRq;
+import ir.ramtung.tinyme.messaging.request.DeleteOrderRq;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
 import ir.ramtung.tinyme.messaging.request.MatchingState;
 import ir.ramtung.tinyme.repository.BrokerRepository;
@@ -261,6 +262,50 @@ public class AuctionMatchingTest {
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 7, LocalDateTime.now(), Side.SELL, 285, 15500, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(openingPrice).isEqualTo(15500);
+    }
+
+    //new
+    @Test 
+    void change_match_state_from_auction_to_continuous(){
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
+        int openingPrice = security.updateIndicativeOpeningPrice();
+        assertThat(openingPrice).isEqualTo(15490);
+        assertThat(security.getMatchingState()).isEqualTo(MatchingState.CONTINUOUS);
+        verify(eventPublisher).publish(new SecurityStateChangedEvent(LocalDateTime.now() , security.getIsin() , MatchingState.CONTINUOUS));
+        verify(eventPublisher).publish(new OpeningPriceEvent(LocalDateTime.now() , security.getIsin(), openingPrice, tradableQuantity));
+
+    }
+
+    @Test
+    void deleteing_inactive_stop_limit_order_in_auction_state_successfully_rejected(){
+        
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
+                Side.BUY, 10, 100, broker.getBrokerId(), shareholder.getShareholderId(),
+                0 , 0 , 200));
+
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+
+        orderHandler.handleDeleteOrder(new DeleteOrderRq(2, security.getIsin(), Side.BUY, 200));
+
+        verify(eventPublisher).publish(new OrderRejectedEvent(2, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE)));
+
+    }
+
+    @Test
+    void updating_inactive_stop_limit_order_in_auction_state_successfully_rejected(){
+        
+        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
+                Side.BUY, 10, 100, broker.getBrokerId(), shareholder.getShareholderId(),
+                0 , 0 , 200));
+
+        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
+
+        orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 200, LocalDateTime.now(),
+                Side.BUY, 10, 150, broker.getBrokerId(), shareholder.getShareholderId(),
+                0 , 0 , 200));
+
+        verify(eventPublisher).publish(new OrderRejectedEvent(2, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_UPDATE)));
+
     }
 /*
     @Test
