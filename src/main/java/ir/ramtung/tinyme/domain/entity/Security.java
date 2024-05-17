@@ -65,6 +65,7 @@ public class Security {
             order = new StopLimitOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getStopPrice() );
+            order.setRequestId(enterOrderRq.getRequestId());
             if (!checkOrderPossibility(order)) { //kasif !!!!!!!!!!
                 return (order.getSide() == Side.BUY) ? MatchResult.notEnoughCredit() : MatchResult.notEnoughPositions();
             }

@@ -43,18 +43,6 @@ public class StopLimitOrder extends Order {
         return new StopLimitOrder(orderId, security, side, newQuantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
     }
 
-    // @Override
-    // public void decreaseQuantity(int amount) {
-    //     if (status == OrderStatus.NEW) {
-    //         super.decreaseQuantity(amount);
-    //         return;
-    //     }
-    //     if (amount > displayedQuantity)
-    //         throw new IllegalArgumentException();
-    //     quantity -= amount;
-    //     displayedQuantity -= amount;
-    // }
-
     @Override
     public void queue() {
         if (isActive)

@@ -67,7 +67,8 @@ public class OrderHandler {
             }
         }
         if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
-            eventPublisher.publish(new OrderActivatedEvent(enterOrderRq.getRequestId() , enterOrderRq.getOrderId()));
+            Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
+            eventPublisher.publish(new OrderActivatedEvent(currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId()).getRequestId() , enterOrderRq.getOrderId()));
         }
         if (!matchResult.trades().isEmpty() && securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
             eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
@@ -77,7 +78,6 @@ public class OrderHandler {
     public void handleEnterOrder(EnterOrderRq enterOrderRq) {
         try {
             validateEnterOrderRq(enterOrderRq);
-
             Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
             Broker broker = brokerRepository.findBrokerById(enterOrderRq.getBrokerId());
             Shareholder shareholder = shareholderRepository.findShareholderById(enterOrderRq.getShareholderId());
@@ -112,7 +112,7 @@ public class OrderHandler {
             }
             MatchResult matchResult = matcher.execute(executableOrder);
             if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0 ){
-                eventPublisher.publish(new OrderActivatedEvent(enterOrderRq.getRequestId() , executableOrder.getOrderId()));
+                eventPublisher.publish(new OrderActivatedEvent(executableOrder.getRequestId() , executableOrder.getOrderId()));
             }
             if(!matchResult.trades().isEmpty()){
                 eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId() , executableOrder.getOrderId() , matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));

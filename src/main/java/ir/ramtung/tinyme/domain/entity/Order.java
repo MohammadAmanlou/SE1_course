@@ -25,7 +25,7 @@ public class Order {
     @Builder.Default
     protected OrderStatus status = OrderStatus.NEW;
     protected int minimumExecutionQuantity;
-    protected int requestId;
+    protected long requestId;
 
     public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity) {
         this.orderId = orderId;
@@ -40,7 +40,7 @@ public class Order {
         this.minimumExecutionQuantity = minimumExecutionQuantity;
     }
 
-    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity , int requestId) {
+    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity , long requestId) {
         this.orderId = orderId;
         this.security = security;
         this.side = side;
@@ -157,6 +157,10 @@ public class Order {
 
     public long getValue() {
         return (long)price * quantity;
+    }
+
+    public void setRequestId(long value){
+        requestId = value;
     }
 
     public int getTotalQuantity() { return quantity; }
