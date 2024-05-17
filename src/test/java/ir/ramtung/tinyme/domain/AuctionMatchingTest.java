@@ -34,6 +34,7 @@ import java.util.List;
 import static ir.ramtung.tinyme.domain.entity.Side.BUY;
 import static ir.ramtung.tinyme.domain.entity.Side.SELL;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
@@ -360,14 +361,10 @@ public class AuctionMatchingTest {
          assertThat(lastTradePrice).isEqualTo(15700);
      } 
 
-
-  //shzd:
-   
-   
      @Test
     void no_trade_happens_in_auction_matching_state() { 
         orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-        assertThat(security.getMatchingState()).isEqualTo(MatchingState.AUCTION);
+        verify(eventPublisher).publish(new SecurityStateChangedEvent(security.getIsin() , MatchingState.AUCTION));
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 400, LocalDateTime.now(), 
         Side.BUY, 10, 700, broker1.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 )); 
@@ -375,10 +372,10 @@ public class AuctionMatchingTest {
         Side.BUY, 10, 700, broker1.getBrokerId(), shareholder.getShareholderId(), 
         0 , 0 , 0));
         assertThat(broker1.getCredit()).isEqualTo(99_986_000L);
-        assertThat(broker2.getCredit()).isEqualTo(100_000_000L); 
+        assertThat(broker2.getCredit()).isEqualTo(100_000_000L);
         verify(eventPublisher).publish(new OrderAcceptedEvent(2, 400));
         verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
-        verify(eventPublisher).publish(new OpeningPriceEvent("ABC",15490,285));     
+        verify(eventPublisher ,times(2)).publish(new OpeningPriceEvent(security.getIsin(),15490,285)); 
     }
 
     @Test
@@ -390,9 +387,6 @@ public class AuctionMatchingTest {
         assertThat(broker1.getCredit()).isEqualTo(100_000_000 + 285*15700 - 285 * 15490 );
         verify(eventPublisher).publish(new TradeEvent("ABC",15490,285,1,7));   ///???????
     }
-
-
-   
 
     @Test
     void find_auction_price_successfully_done_when_buy_order_get_deleted() { //qalate khodayaaa
