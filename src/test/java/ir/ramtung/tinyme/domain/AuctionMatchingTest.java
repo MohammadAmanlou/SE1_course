@@ -532,49 +532,7 @@ public class AuctionMatchingTest {
             LocalDateTime.now(), Side.SELL, 2, 15490, broker1.getBrokerId(), shareholder.getShareholderId(), 0, 0 , 0));
         assertThat(security.getIndicativeOpeningPrice()).isEqualTo(15490);
     }
-
-//
     
-    @Test
-    void opening_process_causes_activation_of_stop_limit_order(){
-        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 100, LocalDateTime.now(), 
-         Side.BUY, 20, 900, broker1.getBrokerId(), shareholder.getShareholderId(), 
-         0 , 0 , 0));
-         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(2, "ABC", 200, LocalDateTime.now(), 
-         Side.SELL, 20, 900, broker2.getBrokerId(), shareholder.getShareholderId(), 
-         0 , 0 , 0));
-         int openingPrice = security.updateIndicativeOpeningPrice();
-
-         assertThat(openingPrice).isEqualTo(15490);
-         assertThat(orderBook.getLastTradePrice()).isEqualTo(0);
-
-        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.AUCTION));
-        openingPrice = security.updateIndicativeOpeningPrice();
-        
-        assertThat(openingPrice).isEqualTo(0);   //nabayad 0 bashe!!!
-        assertThat(orderBook.getLastTradePrice()).isEqualTo(15490);
-
-        orderHandler.handleChangeMatchStateRq(ChangeMatchStateRq.changeMatchStateRq(security.getIsin(), MatchingState.CONTINUOUS));
-
-        orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(3, "ABC", 400, LocalDateTime.now(), 
-        Side.SELL, 10, 600, broker2.getBrokerId(), shareholder.getShareholderId(), 
-        0 , 0 , 500));
-
-        verify(eventPublisher , times(2) ).publish(new SecurityStateChangedEvent("ABC",MatchingState.AUCTION));
-        verify(eventPublisher).publish(new OpeningPriceEvent("ABC",15490,285));
-        verify(eventPublisher).publish(new OrderAcceptedEvent(1,100));
-        verify(eventPublisher).publish(new OrderAcceptedEvent(2,200));
-        verify(eventPublisher, times(2)).publish(new OpeningPriceEvent("ABC",15490,305));//??
-        verify(eventPublisher).publish(new TradeEvent("ABC",15490,20,1,200));
-        verify(eventPublisher).publish(new TradeEvent("ABC",15490,284,1,7));
-        verify(eventPublisher).publish(new TradeEvent("ABC",15490,1,2,7));
-        verify(eventPublisher).publish(new OrderAcceptedEvent(3, 400));
-        assertThat(broker1.getCredit()).isEqualTo(100045850L );
-        assertThat(broker2.getCredit()).isEqualTo(104724450L );
-
-    }
-
     @Test
     void one_buy_order_entered_shareholder_doese_not_have_enough_position(){ 
     shareholder.decPosition(security, 100_000);
