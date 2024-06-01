@@ -12,7 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
-abstract class Request {
+public abstract class Request {
     protected long requestId;
     protected String securityIsin;
     @JsonSerialize(using = LocalDateTimeSerializer.class)
