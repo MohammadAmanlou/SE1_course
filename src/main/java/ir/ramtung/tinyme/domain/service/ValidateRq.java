@@ -114,22 +114,42 @@ public class ValidateRq {
         }
     }
 
-    private void validateOrder(EnterOrderRq enterOrderRq){
+    private void checkPositivity(EnterOrderRq enterOrderRq){
         if (enterOrderRq.getOrderId() <= 0)
-                errors.add(Message.INVALID_ORDER_ID);
-            if (enterOrderRq.getQuantity() <= 0)
-                errors.add(Message.ORDER_QUANTITY_NOT_POSITIVE);
-            if (enterOrderRq.getPrice() <= 0)
-                errors.add(Message.ORDER_PRICE_NOT_POSITIVE);
-            if (enterOrderRq.getMinimumExecutionQuantity() < 0 )
-                errors.add(Message.MINIMUM_EXECUTION_QUANTITY_IS_NEGATIVE);
-            if (enterOrderRq.getMinimumExecutionQuantity() > enterOrderRq.getQuantity() )
-                errors.add(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY);
-            if ((enterOrderRq.getStopPrice() != 0) &&  (enterOrderRq.getPeakSize() != 0))
-                errors.add(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
-            if ((enterOrderRq.getStopPrice() != 0) &&  (enterOrderRq.getMinimumExecutionQuantity() != 0))
-                errors.add(Message.STOP_LIMIT_ORDER_CANT_MEQ);
-            if (enterOrderRq.getPeakSize() < 0 || enterOrderRq.getPeakSize() >= enterOrderRq.getQuantity())
-                errors.add(Message.INVALID_PEAK_SIZE);
+            errors.add(Message.INVALID_ORDER_ID);
+        if (enterOrderRq.getQuantity() <= 0)
+            errors.add(Message.ORDER_QUANTITY_NOT_POSITIVE);
+        if (enterOrderRq.getPrice() <= 0)
+            errors.add(Message.ORDER_PRICE_NOT_POSITIVE);
+        if (enterOrderRq.getMinimumExecutionQuantity() < 0 )
+            errors.add(Message.MINIMUM_EXECUTION_QUANTITY_IS_NEGATIVE);
+    }
+    
+    private void checkMEQLessThanQuantity(EnterOrderRq enterOrderRq){
+        if (enterOrderRq.getMinimumExecutionQuantity() > enterOrderRq.getQuantity() )
+            errors.add(Message.MINIMUM_EXECUTION_QUANTITY_IS_MORE_THAN_QUANTITY);
+    }
+
+    private void checkStopLimitNotIceberg(EnterOrderRq enterOrderRq){
+        if ((enterOrderRq.getStopPrice() != 0) &&  (enterOrderRq.getPeakSize() != 0))
+            errors.add(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
+    }
+
+    private void checkPeakSize(EnterOrderRq enterOrderRq){
+        if (enterOrderRq.getPeakSize() < 0 || enterOrderRq.getPeakSize() >= enterOrderRq.getQuantity())
+            errors.add(Message.INVALID_PEAK_SIZE);
+    }
+
+    private void checkStopLimitZeroMEQ(EnterOrderRq enterOrderRq){
+        if ((enterOrderRq.getStopPrice() != 0) &&  (enterOrderRq.getMinimumExecutionQuantity() != 0))
+            errors.add(Message.STOP_LIMIT_ORDER_CANT_MEQ);
+    }
+
+    private void validateOrder(EnterOrderRq enterOrderRq){
+        checkPositivity(enterOrderRq);
+        checkMEQLessThanQuantity(enterOrderRq);
+        checkStopLimitNotIceberg(enterOrderRq);
+        checkStopLimitZeroMEQ(enterOrderRq);
+        checkPeakSize(enterOrderRq);
     }
 }
