@@ -57,23 +57,35 @@ public class ValidateRq {
             errors.add(Message.PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
     }
 
+    private void checkAuctionMEQ(EnterOrderRq enterOrderRq){
+        if(enterOrderRq.getMinimumExecutionQuantity() > 0){
+            errors.add(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE);
+        }
+    }
+
+    private void checkAuctionStopLimit(EnterOrderRq enterOrderRq){
+        if(enterOrderRq.getStopPrice() > 0){
+            if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER){
+                errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR);
+            }
+            else{
+                errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_UPDATE);
+            }
+        }
+    }
+
+    private void checkAuction(EnterOrderRq enterOrderRq , Security security){
+            checkAuctionMEQ(enterOrderRq);
+            checkAuctionStopLimit(enterOrderRq);
+    }
+
     private void validateSecurity(EnterOrderRq enterOrderRq ){
         Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
         if (!checkSecurityExistence(security))
         {
             checkMultiple(enterOrderRq , security);
-        }
-        if(security != null && security.getMatchingState() == MatchingState.AUCTION){
-            if(enterOrderRq.getMinimumExecutionQuantity() > 0){
-                errors.add(Message.MEQ_IS_PROHIBITED_IN_AUCTION_MODE);
-            }
-            if(enterOrderRq.getStopPrice() > 0){
-                if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER){
-                    errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_ERROR);
-                }
-                else{
-                    errors.add(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_UPDATE);
-                }
+            if(security.getMatchingState() == MatchingState.AUCTION){
+                checkAuction(enterOrderRq , security);
             }
         }
     }
@@ -100,7 +112,6 @@ public class ValidateRq {
         catch(InvalidRequestException ex){
             throw ex;
         }
-        
     }
 
     private void validateOrder(EnterOrderRq enterOrderRq){
