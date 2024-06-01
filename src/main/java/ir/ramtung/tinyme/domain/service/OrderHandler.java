@@ -84,6 +84,12 @@ public class OrderHandler {
         }
     }
 
+    private void activateStopLimitOrders(Security security , EnterOrderRq enterOrderRq){
+        if(security.getMatchingState() == MatchingState.CONTINUOUS){
+            execInactiveStopLimitOrders(security , enterOrderRq);
+        }
+    }
+
     public void handleEnterOrder(EnterOrderRq enterOrderRq) {
         try {
             ValidateRq validateRq = new ValidateRq(enterOrderRq, securityRepository, brokerRepository, shareholderRepository);
@@ -100,11 +106,8 @@ public class OrderHandler {
                 matchResult = security.updateOrder(enterOrderRq, matcher);
 
             publishOutcome(matchResult, enterOrderRq);
-            if(security.getMatchingState() == MatchingState.CONTINUOUS){
-                execInactiveStopLimitOrders(security , enterOrderRq);
-            }
+            activateStopLimitOrders(security , enterOrderRq);
             
-
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), ex.getReasons()));
         }

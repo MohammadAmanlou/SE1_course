@@ -152,4 +152,5 @@ public class ValidateRq {
         checkStopLimitZeroMEQ(enterOrderRq);
         checkPeakSize(enterOrderRq);
     }
+
 }
