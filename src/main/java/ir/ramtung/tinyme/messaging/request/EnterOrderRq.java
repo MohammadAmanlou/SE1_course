@@ -6,20 +6,22 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import ir.ramtung.tinyme.domain.entity.Side;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
-public class EnterOrderRq {
+@Getter
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class EnterOrderRq extends Request {
     private OrderEntryType requestType;
-    private long requestId;
-    private String securityIsin;
     private long orderId;
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    private LocalDateTime entryTime;
     private Side side;
     private int quantity;
     private int price;
@@ -51,10 +53,7 @@ public class EnterOrderRq {
         this.stopPrice = stopPrice;
     }
 
-
-
     public static EnterOrderRq createNewOrderRq(long requestId, String securityIsin, long orderId, LocalDateTime entryTime, Side side, int quantity, int price, long brokerId, long shareholderId, int peakSize , int minimumExecutionQuantity) {
-        
         return new EnterOrderRq(OrderEntryType.NEW_ORDER, requestId, securityIsin, orderId, entryTime, side, quantity, price, brokerId, shareholderId, peakSize , minimumExecutionQuantity);
     }
 
@@ -63,7 +62,6 @@ public class EnterOrderRq {
     }
 
     public static EnterOrderRq createNewOrderRq(long requestId, String securityIsin, long orderId, LocalDateTime entryTime, Side side, int quantity, int price, long brokerId, long shareholderId, int peakSize , int minimumExecutionQuantity , int stopPrice) {
-        
         return new EnterOrderRq(OrderEntryType.NEW_ORDER, requestId, securityIsin, orderId, entryTime, side, quantity, price, brokerId, shareholderId, peakSize , minimumExecutionQuantity , stopPrice);
     }
 

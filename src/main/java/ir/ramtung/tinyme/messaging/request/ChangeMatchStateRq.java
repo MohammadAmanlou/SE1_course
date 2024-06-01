@@ -1,18 +1,21 @@
 package ir.ramtung.tinyme.messaging.request;
 
-
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
-public class ChangeMatchStateRq {
+@Getter
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class ChangeMatchStateRq extends Request{
 
-    private String securityIsin;
     private MatchingState state;
-
 
     private ChangeMatchStateRq(String securityIsin , MatchingState matchingState ){
         this.securityIsin = securityIsin;
