@@ -81,7 +81,7 @@ public class ValidateRq {
 
     private void validateSecurity(EnterOrderRq enterOrderRq ){
         Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
-        if (!checkSecurityExistence(security))
+        if (checkSecurityExistence(security))
         {
             checkMultiple(enterOrderRq , security);
             if(security.getMatchingState() == MatchingState.AUCTION){
