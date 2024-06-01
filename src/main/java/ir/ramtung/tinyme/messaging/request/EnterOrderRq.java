@@ -14,11 +14,14 @@ import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+import org.springframework.stereotype.Component;
+
 @Data
 @NoArgsConstructor
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@Component
 public class EnterOrderRq extends Request {
     private OrderEntryType requestType;
     private long orderId;

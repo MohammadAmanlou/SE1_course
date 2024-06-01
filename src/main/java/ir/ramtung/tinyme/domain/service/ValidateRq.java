@@ -42,16 +42,26 @@ public class ValidateRq {
         this.shareholderRepository = shareholderRepository;
     }
 
-    private void validateSecurity(EnterOrderRq enterOrderRq ){
-        Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
+    private boolean checkSecurityExistence(Security security){
         if (security == null){
             errors.add(Message.UNKNOWN_SECURITY_ISIN);
+            return false;
         }
-        else {
-            if (enterOrderRq.getQuantity() % security.getLotSize() != 0)
-                errors.add(Message.QUANTITY_NOT_MULTIPLE_OF_LOT_SIZE);
-            if (enterOrderRq.getPrice() % security.getTickSize() != 0)
-                errors.add(Message.PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
+        return true;
+    }
+
+    private void checkMultiple(EnterOrderRq enterOrderRq , Security security){
+        if (enterOrderRq.getQuantity() % security.getLotSize() != 0)
+        errors.add(Message.QUANTITY_NOT_MULTIPLE_OF_LOT_SIZE);
+        if (enterOrderRq.getPrice() % security.getTickSize() != 0)
+            errors.add(Message.PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
+    }
+
+    private void validateSecurity(EnterOrderRq enterOrderRq ){
+        Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
+        if (!checkSecurityExistence(security))
+        {
+            checkMultiple(enterOrderRq , security);
         }
         if(security != null && security.getMatchingState() == MatchingState.AUCTION){
             if(enterOrderRq.getMinimumExecutionQuantity() > 0){
