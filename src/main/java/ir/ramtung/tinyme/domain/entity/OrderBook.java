@@ -30,8 +30,7 @@ public class OrderBook {
         inactiveSellStopLimitOrders = new LinkedList<>();
     }
 
-    public void enqueue(Order order) {
-        List<Order> queue = getQueue(order.getSide());
+    private void enqueueOrder(Order order, List<Order> queue) {
         ListIterator<Order> it = queue.listIterator();
         while (it.hasNext()) {
             if (order.queuesBefore(it.next())) {
@@ -42,32 +41,19 @@ public class OrderBook {
         order.queue();
         it.add(order);
     }
-    
-    public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder){
-        List<Order> queue = getInactiveStopLimitOrdersQueue(stopLimitOrder.getSide() ); 
-        ListIterator<Order> it = queue.listIterator();
-        while (it.hasNext()) {
-            if (stopLimitOrder.queuesBefore(it.next())) {
-                it.previous();
-                break;
-            }
-        }
-        stopLimitOrder.queue();
-        it.add(stopLimitOrder);
 
+    public void enqueue(Order order) {
+        List<Order> queue = getQueue(order.getSide());
+        enqueueOrder(order, queue);
+    }
+    
+    public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder) {
+        List<Order> queue = getInactiveStopLimitOrdersQueue(stopLimitOrder.getSide());
+        enqueueOrder(stopLimitOrder, queue);
     }
 
-    public void activeStopLimitOrderEnqueue(Order stopLimitOrder){
-        ListIterator<Order> it = activeStopLimitOrders.listIterator();
-        while (it.hasNext()) {
-            if (stopLimitOrder.queuesBefore(it.next())) {
-                it.previous();
-                break;
-            }
-        }
-        stopLimitOrder.queue();
-        it.add(stopLimitOrder);
-
+    public void activeStopLimitOrderEnqueue(Order stopLimitOrder) {
+        enqueueOrder(stopLimitOrder, activeStopLimitOrders);
     }
     
 
