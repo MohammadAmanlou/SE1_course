@@ -239,26 +239,27 @@ public class OrderHandler {
             throw new InvalidRequestException(errors);
     }
 
-
-
-    public void handleChangeMatchStateRq(ChangeMatchStateRq changeMatchStateRq){
-       Security security = securityRepository.findSecurityByIsin(changeMatchStateRq.getSecurityIsin());
-       MatchingState matchingState = changeMatchStateRq.getState();
-       MatchResult matchResult = security.ChangeMatchStateRq(matchingState , matcher);
-       if (security.getMatchingState() == MatchingState.CONTINUOUS){
-            execInactiveStopLimitOrders(security );
-       }
-       else {
-            execInactiveStopLimitOrdersAuction(security );
-       }
-       if(matchResult != null){
-        eventPublisher.publish(new OpeningPriceEvent(security.getIsin(),security.getIndicativeOpeningPrice() , security.getHighestQuantity() ));
-       }
-       if (matchResult != null && !matchResult.trades().isEmpty()) {
-            for (Trade trade: matchResult.trades()){
-                eventPublisher.publish(new TradeEvent(security.getIsin() , trade.getPrice() , trade.getQuantity() , trade.getBuy().getOrderId() , trade.getSell().getOrderId() ));
-            }
-        }
-       eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin() , security.getMatchingState()));
+    public void handleChangeMatchStateRq(ChangeMatchStateRq changeMatchStateRq) {
+        Security security = securityRepository.findSecurityByIsin(changeMatchStateRq.getSecurityIsin());
+        MatchingState matchingState = changeMatchStateRq.getState();
+        MatchResult matchResult = security.ChangeMatchStateRq(matchingState, matcher);
+        
+        processMatchStateChange(security, matchResult);
     }
+    
+    private void processMatchStateChange(Security security, MatchResult matchResult) {
+        if (security.getMatchingState() == MatchingState.CONTINUOUS) {
+            execInactiveStopLimitOrders(security);
+        } else {
+            execInactiveStopLimitOrdersAuction(security);
+        }
+        if (matchResult != null) {
+            eventPublisher.publish(new OpeningPriceEvent(security.getIsin(), security.getIndicativeOpeningPrice(), security.getHighestQuantity()));
+        }
+        if (matchResult != null && !matchResult.trades().isEmpty()) {
+            matchResult.trades().forEach(trade -> eventPublisher.publish(new TradeEvent(security.getIsin(), trade.getPrice(), trade.getQuantity(), trade.getBuy().getOrderId(), trade.getSell().getOrderId())));
+        }
+        eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin(), security.getMatchingState()));
+    }
+    
 }
