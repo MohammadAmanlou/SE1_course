@@ -185,29 +185,30 @@ public class OrderHandler {
         }
     }
     
-    private void execInactiveStopLimitOrdersAuction(Security security ){
+    private void execInactiveStopLimitOrdersAuction(Security security) {
         while (true) {
             Order executableBuyOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.BUY);
             Order executableSellOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.SELL);
-            if(executableBuyOrder == null && executableSellOrder == null){
+            if (executableBuyOrder == null && executableSellOrder == null) {
                 break;
             }
-            if (executableBuyOrder != null) {
-                executableBuyOrder.getBroker().increaseCreditBy(executableBuyOrder.getValue());
-                MatchResult matchResult = matcher.auctionAddToQueue(executableBuyOrder);
-                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableBuyOrder.getStopPrice() > 0 ){
-                    eventPublisher.publish(new OrderActivatedEvent(executableBuyOrder.getRequestId() , executableBuyOrder.getOrderId()));
-                }
-            }
-            else if (executableSellOrder != null) {
-                MatchResult matchResult = matcher.auctionAddToQueue(executableSellOrder);
-                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableSellOrder.getStopPrice() > 0 ){
-                    eventPublisher.publish(new OrderActivatedEvent(executableSellOrder.getRequestId() , executableSellOrder.getOrderId()));
-                }
-            }
-            
+            processAuctionOrder(executableBuyOrder, Side.BUY);
+            processAuctionOrder(executableSellOrder, Side.SELL);
         }
     }
+    
+    private void processAuctionOrder(Order executableOrder, Side side) {
+        if (executableOrder != null) {
+            if (side == Side.BUY) {
+                executableOrder.getBroker().increaseCreditBy(executableOrder.getValue());
+            }
+            MatchResult matchResult = matcher.auctionAddToQueue(executableOrder);
+            if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0) {
+                eventPublisher.publish(new OrderActivatedEvent(executableOrder.getRequestId(), executableOrder.getOrderId()));
+            }
+        }
+    }
+    
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
         try {
             validateDeleteOrderRq(deleteOrderRq);
