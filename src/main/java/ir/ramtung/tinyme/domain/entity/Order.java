@@ -109,31 +109,24 @@ public class Order {
         return 0;
     }
 
-    public boolean inactiveOrderQueuesBefore(Order order){ //kasif
-        int entryCompareResult = this.entryTime.compareTo(order.getEntryTime());
-        if (order.getSide() == Side.BUY ){
-            if(this.getStopPrice() < order.getStopPrice()){
-                return true;
-            }
-            else if(this.getStopPrice() == order.getStopPrice()){
-                return entryCompareResult < 0;
-            }
-            else{
-                return false;
-            }
-        }
-        else{
-            if(this.getStopPrice() > order.getStopPrice()){
-                return true;
-            }
-            else if(this.getStopPrice() == order.getStopPrice()){
-                return entryCompareResult < 0;
-            }
-            else{
-                return false; 
-            }
-        }
+    public boolean inactiveOrderQueuesBefore(Order order) {
+        return order.getSide() == Side.BUY ? compareBuyOrder(order) : compareSellOrder(order);
     }
+    
+    private boolean compareBuyOrder(Order order) {
+        int entryCompareResult = entryTime.compareTo(order.getEntryTime());
+        if (getStopPrice() < order.getStopPrice()) return true;
+        if (getStopPrice() == order.getStopPrice()) return entryCompareResult < 0;
+        return false;
+    }
+    
+    private boolean compareSellOrder(Order order) {
+        int entryCompareResult = entryTime.compareTo(order.getEntryTime());
+        if (getStopPrice() > order.getStopPrice()) return true;
+        if (getStopPrice() == order.getStopPrice()) return entryCompareResult < 0;
+        return false;
+    }
+    
 
     public void queue() {
         status = OrderStatus.QUEUED;
