@@ -119,26 +119,29 @@ public class OrderHandler {
 
     public void handleEnterOrder(EnterOrderRq enterOrderRq) {
         try {
-            ValidateRq validateRq = new ValidateRq(enterOrderRq, securityRepository, brokerRepository, shareholderRepository);
-            validateRq.validateEnterOrderRq(enterOrderRq);
-            Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
-            Broker broker = brokerRepository.findBrokerById(enterOrderRq.getBrokerId());
-            Shareholder shareholder = shareholderRepository.findShareholderById(enterOrderRq.getShareholderId());
-
-            MatchResult matchResult;
-
-            if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
-                matchResult = security.newOrder(enterOrderRq, broker, shareholder, matcher);
-            else
-                matchResult = security.updateOrder(enterOrderRq, matcher);
-
-            publishOutcome(matchResult, enterOrderRq);
-            activateStopLimitOrders(security , enterOrderRq);
-            
+            validateAndProcessOrder(enterOrderRq);
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), ex.getReasons()));
         }
     }
+    
+    private void validateAndProcessOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException {
+        ValidateRq validateRq = new ValidateRq(enterOrderRq, securityRepository, brokerRepository, shareholderRepository);
+        validateRq.validateEnterOrderRq(enterOrderRq);
+        Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
+        Broker broker = brokerRepository.findBrokerById(enterOrderRq.getBrokerId());
+        Shareholder shareholder = shareholderRepository.findShareholderById(enterOrderRq.getShareholderId());
+    
+        MatchResult matchResult;
+        if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
+            matchResult = security.newOrder(enterOrderRq, broker, shareholder, matcher);
+        else
+            matchResult = security.updateOrder(enterOrderRq, matcher);
+    
+        publishOutcome(matchResult, enterOrderRq);
+        activateStopLimitOrders(security, enterOrderRq);
+    }
+    
 
 
     private void execInactiveStopLimitOrders(Security security , EnterOrderRq enterOrderRq){
