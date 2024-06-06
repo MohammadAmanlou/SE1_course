@@ -144,55 +144,47 @@ public class OrderHandler {
     
 
 
-    private void execInactiveStopLimitOrders(Security security , EnterOrderRq enterOrderRq){
+    private void execInactiveStopLimitOrders(Security security, EnterOrderRq enterOrderRq) {
         while (true) {
             Order executableOrder = security.getOrderBook().dequeueNextStopLimitOrder(enterOrderRq.getSide());
-            if(executableOrder == null){
+            if (executableOrder == null) {
                 break;
             }
-            if (executableOrder.getSide() == Side.BUY) {
-                executableOrder.getBroker().increaseCreditBy(executableOrder.getValue());
-            }
-            MatchResult matchResult = matcher.execute(executableOrder);
-            if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0 ){
-                eventPublisher.publish(new OrderActivatedEvent(executableOrder.getRequestId() , executableOrder.getOrderId()));
-            }
-            if(!matchResult.trades().isEmpty()){
-                eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId() , executableOrder.getOrderId() , matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
-            }
+            processExecutableOrder(executableOrder, enterOrderRq);
         }
     }
-
-    private void execInactiveStopLimitOrders(Security security ){
+    
+    private void execInactiveStopLimitOrders(Security security) {
         while (true) {
             Order executableBuyOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.BUY);
             Order executableSellOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.SELL);
-            if(executableBuyOrder == null && executableSellOrder == null){
+            if (executableBuyOrder == null && executableSellOrder == null) {
                 break;
             }
             if (executableBuyOrder != null) {
-                executableBuyOrder.getBroker().increaseCreditBy(executableBuyOrder.getValue());
-                MatchResult matchResult = matcher.execute(executableBuyOrder);
-                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableBuyOrder.getStopPrice() > 0 ){
-                    eventPublisher.publish(new OrderActivatedEvent(executableBuyOrder.getRequestId() , executableBuyOrder.getOrderId()));
-                }
-                if(!matchResult.trades().isEmpty()){
-                    eventPublisher.publish(new OrderExecutedEvent(executableBuyOrder.getRequestId() , executableBuyOrder.getOrderId() , matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
-                }
+                processExecutableOrder(executableBuyOrder, null);
             }
-            else if (executableSellOrder != null) {
-                executableSellOrder.getBroker().increaseCreditBy(executableSellOrder.getValue());
-                MatchResult matchResult = matcher.execute(executableSellOrder);
-                if(matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableSellOrder.getStopPrice() > 0 ){
-                    eventPublisher.publish(new OrderActivatedEvent(executableSellOrder.getRequestId() , executableSellOrder.getOrderId()));
-                }
-                if(!matchResult.trades().isEmpty()){
-                    eventPublisher.publish(new OrderExecutedEvent(executableSellOrder.getRequestId() , executableSellOrder.getOrderId() , matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
-                }
+            if (executableSellOrder != null) {
+                processExecutableOrder(executableSellOrder, null);
             }
-            
         }
     }
+    
+    private void processExecutableOrder(Order executableOrder, EnterOrderRq enterOrderRq) {
+        executableOrder.getBroker().increaseCreditBy(executableOrder.getValue());
+        MatchResult matchResult = matcher.execute(executableOrder);
+        if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0) {
+            eventPublisher.publish(new OrderActivatedEvent(executableOrder.getRequestId(), executableOrder.getOrderId()));
+        }
+        if (!matchResult.trades().isEmpty()) {
+            eventPublisher.publish(new OrderExecutedEvent(
+                    enterOrderRq != null ? enterOrderRq.getRequestId() : executableOrder.getRequestId(),
+                    executableOrder.getOrderId(),
+                    matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())
+            ));
+        }
+    }
+    
     private void execInactiveStopLimitOrdersAuction(Security security ){
         while (true) {
             Order executableBuyOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.BUY);
