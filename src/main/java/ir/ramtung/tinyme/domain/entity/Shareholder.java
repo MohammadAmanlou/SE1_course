@@ -36,4 +36,5 @@ public class Shareholder {
     public boolean hasEnoughPositionsOn(Security security, int position) {
         return positions.getOrDefault(security, 0) >= position;
     }
+    
 }

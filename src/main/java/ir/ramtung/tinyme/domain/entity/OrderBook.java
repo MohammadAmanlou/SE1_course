@@ -67,8 +67,7 @@ public class OrderBook {
         }
         else {
             return inactiveSellStopLimitOrders;
-        }
-            
+        } 
     }
 
     public Order findByOrderId(Side side, long orderId) {
@@ -143,6 +142,7 @@ public class OrderBook {
         removeByOrderId(Side.SELL, sellOrder.getOrderId());
         putBack(sellOrder);
     }
+
     public void restoreBuyOrder(Order buyOrder) {
         removeByOrderId(Side.BUY, buyOrder.getOrderId());
         putBack(buyOrder);
@@ -179,9 +179,6 @@ public class OrderBook {
                 ((StopLimitOrder)order).setIsActive(true);
                 iterator.remove();
                 activeStopLimitOrderEnqueue(order);
-                // /stopLimitOrderEnqueue(order);
-                
-        
             }
         }
     }
@@ -191,25 +188,20 @@ public class OrderBook {
         while (iterator.hasNext()) {
             Order order = iterator.next();
             if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY  && (order instanceof StopLimitOrder))) {
-                iterator.remove(); // Safe removal of the element
+                iterator.remove(); 
                 order.getBroker().increaseCreditBy(order.getPrice() * order.getQuantity());
                 ((StopLimitOrder)order).setIsActive(true);
-                activeStopLimitOrderEnqueue(order);
-                //stopLimitOrderEnqueue(order);
-                
+                activeStopLimitOrderEnqueue(order);                
             }
         }
     }
 
     public List<StopLimitOrder> activateStopLimitOrders() {
-
         List<StopLimitOrder> activatedOrders = new ArrayList<>();
-        
         if(inactiveSellStopLimitOrders.size() > 0 )
             activateSellStopLimitOrders();
         if(inactiveBuyStopLimitOrders.size() > 0)
             activateBuyStopLimitOrders();
-
         return activatedOrders;
     }
 
@@ -224,7 +216,6 @@ public class OrderBook {
         }
         order.queue();
         it.add(order);
-
     }
 
     public void enqueueInactiveStopLimitOrder(Order order){

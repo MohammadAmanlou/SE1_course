@@ -192,8 +192,6 @@ public class Matcher {
             else if (newOrder.getSide() == Side.BUY && !(newOrder instanceof StopLimitOrder)){
                 rollbackBuyTrades(newOrder, trades);
             }
-            
-            
             return false;
         }
         else

@@ -108,7 +108,6 @@ public class Order {
         return false;
     }
     
-
     public void queue() {
         status = OrderStatus.QUEUED;
     }
@@ -138,4 +137,5 @@ public class Order {
     }
 
     public int getTotalQuantity() { return quantity; }
+    
 }

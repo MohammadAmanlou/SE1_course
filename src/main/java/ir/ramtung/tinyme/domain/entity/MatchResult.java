@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.NoSuchElementException;
 
-
-
 public final class MatchResult {
     private final MatchingOutcome outcome;
     private final Order remainder;
@@ -74,5 +72,5 @@ public final class MatchResult {
                 "remainder=" + remainder + ", " +
                 "trades=" + trades + ']';
     }
-    
+
 }
