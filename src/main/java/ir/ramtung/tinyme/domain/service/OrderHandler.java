@@ -44,26 +44,26 @@ public class OrderHandler {
     private void publishOutcome(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         switch (matchResult.outcome()) {
             case NOT_ENOUGH_CREDIT:
-                handleNotEnoughCredit(enterOrderRq);
+                publishNotEnoughCredit(enterOrderRq);
                 return;
             case NOT_ENOUGH_POSITIONS:
-                handleNotEnoughPositions(enterOrderRq);
+                publishNotEnoughPositions(enterOrderRq);
                 return;
             default:
-                handleOrderEntryType(matchResult, enterOrderRq);
-                handleStopPriceAndTrades(matchResult, enterOrderRq);
+                handleOrder(matchResult, enterOrderRq);
+                publishStopPriceOutcome(matchResult, enterOrderRq);
         }
     }
     
-    private void handleNotEnoughCredit(EnterOrderRq enterOrderRq) {
+    private void publishNotEnoughCredit(EnterOrderRq enterOrderRq) {
         eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
     }
     
-    private void handleNotEnoughPositions(EnterOrderRq enterOrderRq) {
+    private void publishNotEnoughPositions(EnterOrderRq enterOrderRq) {
         eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
     }
     
-    private void handleOrderEntryType(MatchResult matchResult, EnterOrderRq enterOrderRq) {
+    private void handleOrder(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER) {
             handleNewOrder(matchResult, enterOrderRq);
         } else {
@@ -90,27 +90,34 @@ public class OrderHandler {
         }
     }
     
-    private void handleStopPriceAndTrades(MatchResult matchResult, EnterOrderRq enterOrderRq) {
+    private void publishStopPriceOutcome(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
-            Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
-            Order order = currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId());
-            if (order != null) {
-                eventPublisher.publish(new OrderActivatedEvent(order.getRequestId(), enterOrderRq.getOrderId()));
-            } else {
-                Trade lastTrade = matchResult.trades().getLast();
-                Order matchedOrder = currentSecurity.getOrderBook().findByOrderId(lastTrade.getBuy().getSide(), lastTrade.getBuy().getOrderId());
-                if (matchedOrder != null) {
-                    eventPublisher.publish(new OrderActivatedEvent(matchedOrder.getRequestId(), enterOrderRq.getOrderId()));
-                }
+            publishActivations(matchResult , enterOrderRq);
+        }
+        publishExecutions(matchResult , enterOrderRq);
+    }
+
+    private void publishActivations(MatchResult matchResult, EnterOrderRq enterOrderRq){
+        Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
+        Order order = currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId());
+        if (order != null) {
+            eventPublisher.publish(new OrderActivatedEvent(order.getRequestId(), enterOrderRq.getOrderId()));
+        } else {
+            Trade lastTrade = matchResult.trades().getLast();
+            Order matchedOrder = currentSecurity.getOrderBook().findByOrderId(lastTrade.getBuy().getSide(), lastTrade.getBuy().getOrderId());
+            if (matchedOrder != null) {
+                eventPublisher.publish(new OrderActivatedEvent(matchedOrder.getRequestId(), enterOrderRq.getOrderId()));
             }
         }
+    }
+
+    private void publishExecutions(MatchResult matchResult, EnterOrderRq enterOrderRq){
         if (!matchResult.trades().isEmpty() && securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
             eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
                     matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
         }
     }
     
-
     private void activateStopLimitOrders(Security security , EnterOrderRq enterOrderRq){
         if(security.getMatchingState() == MatchingState.CONTINUOUS){
             execInactiveStopLimitOrders(security , enterOrderRq);
@@ -142,8 +149,6 @@ public class OrderHandler {
         activateStopLimitOrders(security, enterOrderRq);
     }
     
-
-
     private void execInactiveStopLimitOrders(Security security, EnterOrderRq enterOrderRq) {
         while (true) {
             Order executableOrder = security.getOrderBook().dequeueNextStopLimitOrder(enterOrderRq.getSide());
