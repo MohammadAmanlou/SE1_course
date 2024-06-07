@@ -162,28 +162,68 @@ public class ValidateRq {
             throw new InvalidRequestException(errors);
     }
 
-    public void validateUpdateOrderRq(Order order, EnterOrderRq updateOrderRq, OrderBook orderBook) throws InvalidRequestException{
+    private void validateInvalidUpdatePeakSize(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         if ((order instanceof IcebergOrder) && updateOrderRq.getPeakSize() == 0)
             throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
+    }
+
+    private void validateNonIcebergHavingPeakSize(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
             throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
+    }
+
+    private void validatePeakSize(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
+        validateInvalidUpdatePeakSize(order, updateOrderRq);
+        validateNonIcebergHavingPeakSize(order, updateOrderRq);
+    }
+
+    private void validateUpdateActiveStopLimit(Order order, OrderBook orderBook, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         if ((order instanceof StopLimitOrder) && (orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId()) != null)){ 
             throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE);
         }
-        if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() == 0){
-            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
-        }
+    }
+
+    private void validateUpdateStopPriceForNonStopLimit(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         if (!(order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() > 0){
             throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
         }
+    }
+
+    private void validateZeroStopPriceForStopLimit(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
+        if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() == 0){
+            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
+        }
+    }
+
+    private void validateStopLimitHaveMEQ(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         if ((order instanceof StopLimitOrder) && (updateOrderRq.getMinimumExecutionQuantity() != 0) && (order.getMinimumExecutionQuantity() == 0)){
             throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_MEQ);
         }
+    }
+
+    private void validateStopLimitBeIceberg(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         if ((order instanceof StopLimitOrder) && (updateOrderRq.getPeakSize() != 0) ){
             throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
         }
+    }
+
+    private void validateUpdateStopLimit(Order order, OrderBook orderBook, EnterOrderRq updateOrderRq) throws InvalidRequestException{
+        validateUpdateActiveStopLimit(order, orderBook, updateOrderRq);
+        validateUpdateStopPriceForNonStopLimit(order, updateOrderRq);
+        validateZeroStopPriceForStopLimit(order, updateOrderRq);
+        validateStopLimitHaveMEQ(order, updateOrderRq);
+        validateStopLimitBeIceberg(order, updateOrderRq);
+    }
+
+    private void validateUpdateMEQ(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         if (order.getMinimumExecutionQuantity() != updateOrderRq.getMinimumExecutionQuantity())
             throw new InvalidRequestException(Message.CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY);
+    }
+
+    public void validateUpdateOrderRq(Order order, EnterOrderRq updateOrderRq, OrderBook orderBook) throws InvalidRequestException{
+        validatePeakSize(order, updateOrderRq);
+        validateUpdateStopLimit(order, orderBook, updateOrderRq);
+        validateUpdateMEQ(order, updateOrderRq);
     }
 
 }
