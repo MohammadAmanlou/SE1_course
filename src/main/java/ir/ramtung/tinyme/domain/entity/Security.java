@@ -114,15 +114,19 @@ public class Security {
             order.getBroker().increaseCreditBy(order.getValue());
     }
 
+    private void decreaseBuyCredit(Order order){
+        if (order.getSide() == Side.BUY ){
+            order.getBroker().decreaseCreditBy(order.getValue());
+        }
+    }
+
     private void removeOrder(Order order, DeleteOrderRq deleteOrderRq){
         if (!orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId())){
             if (matchingState == MatchingState.CONTINUOUS){
                 orderBook.removeInActiveStopLimitByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
             }
             else{
-                if (order.getSide() == Side.BUY ){
-                    order.getBroker().decreaseCreditBy(order.getValue());
-                }
+                decreaseBuyCredit(order);
             }
         }
     }
@@ -165,9 +169,7 @@ public class Security {
 
     private MatchResult executeActiveOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq){
         if (!isLosesPriority(originalOrder, updateOrderRq) && updateOrderRq.getStopPrice() == 0) {
-            if (updateOrderRq.getSide() == Side.BUY) {
-                order.getBroker().decreaseCreditBy(order.getValue());
-            }
+            decreaseBuyCredit(order);
             return MatchResult.executed(null, List.of()); 
         }
         else{
@@ -201,9 +203,7 @@ public class Security {
                 matchResult = matcher.execute(order);
                 if (matchResult.outcome() != MatchingOutcome.EXECUTED) {
                     orderBook.enqueueActiveStopLimitOrder(originalOrder);
-                    if (updateOrderRq.getSide() == Side.BUY) {
-                        originalOrder.getBroker().decreaseCreditBy(originalOrder.getValue());
-                    }
+                    decreaseBuyCredit(originalOrder);
                 }
                 return matchResult;
             }
@@ -258,9 +258,7 @@ public class Security {
     }
     
     private MatchResult handleInactiveStopLimitOrder(Order order){
-        if(order.getSide()==Side.BUY){
-            order.getBroker().decreaseCreditBy(order.getValue());
-        }
+        decreaseBuyCredit(order);
         orderBook.enqueueInactiveStopLimitOrder(order);
         return MatchResult.inactiveOrderEnqueued();
     }
