@@ -4,6 +4,7 @@ import ir.ramtung.tinyme.messaging.exception.InvalidRequestException;
 import ir.ramtung.tinyme.messaging.request.DeleteOrderRq;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
 import ir.ramtung.tinyme.domain.service.Matcher;
+import ir.ramtung.tinyme.domain.service.ValidateRq;
 import ir.ramtung.tinyme.messaging.Message;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,6 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.ObjectUtils.Null;
 
 import java.util.ArrayList;
@@ -145,29 +147,8 @@ public class Security {
 
     public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         Order order = getOrderForUpdate(updateOrderRq);
-
-        if ((order instanceof IcebergOrder) && updateOrderRq.getPeakSize() == 0)
-            throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
-        if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
-            throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
-        if ((order instanceof StopLimitOrder) && (orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId()) != null)){ 
-            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE);
-        }
-        if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() == 0){
-            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
-        }
-        if (!(order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() > 0){
-            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
-        }
-        if ((order instanceof StopLimitOrder) && (updateOrderRq.getMinimumExecutionQuantity() != 0) && (order.getMinimumExecutionQuantity() == 0)){
-            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_MEQ);
-        }
-        if ((order instanceof StopLimitOrder) && (updateOrderRq.getPeakSize() != 0) ){
-            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
-        }
-        if (order.getMinimumExecutionQuantity() != updateOrderRq.getMinimumExecutionQuantity())
-            throw new InvalidRequestException(Message.CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY);
-
+        ValidateRq validateRq = new ValidateRq(updateOrderRq, null, null, null);
+        validateRq.validateUpdateOrderRq(order, updateOrderRq, orderBook);
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
                         orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())) {
@@ -220,9 +201,7 @@ public class Security {
 
     public void processActivatedStopLimitOrders(Matcher matcher) {
         List<Order>activatedOrders = orderBook.getActiveStopLimitOrders();
-        for (Order activatedOrder : activatedOrders) {
-            //convert the stop limit order to order?
-    
+        for (Order activatedOrder : activatedOrders) {    
             MatchResult matchResult = matcher.execute(activatedOrder);
             activatedOrders.remove(activatedOrder);
             matchResults.add(matchResult);

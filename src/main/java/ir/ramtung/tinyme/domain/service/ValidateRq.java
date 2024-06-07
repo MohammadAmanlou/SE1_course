@@ -162,4 +162,28 @@ public class ValidateRq {
             throw new InvalidRequestException(errors);
     }
 
+    public void validateUpdateOrderRq(Order order, EnterOrderRq updateOrderRq, OrderBook orderBook) throws InvalidRequestException{
+        if ((order instanceof IcebergOrder) && updateOrderRq.getPeakSize() == 0)
+            throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
+        if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
+            throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
+        if ((order instanceof StopLimitOrder) && (orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId()) != null)){ 
+            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE);
+        }
+        if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() == 0){
+            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
+        }
+        if (!(order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() > 0){
+            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
+        }
+        if ((order instanceof StopLimitOrder) && (updateOrderRq.getMinimumExecutionQuantity() != 0) && (order.getMinimumExecutionQuantity() == 0)){
+            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_MEQ);
+        }
+        if ((order instanceof StopLimitOrder) && (updateOrderRq.getPeakSize() != 0) ){
+            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
+        }
+        if (order.getMinimumExecutionQuantity() != updateOrderRq.getMinimumExecutionQuantity())
+            throw new InvalidRequestException(Message.CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY);
+    }
+
 }
