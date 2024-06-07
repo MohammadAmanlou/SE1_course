@@ -163,32 +163,42 @@ public class Security {
                         orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity());
     }
 
-    public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
-        Order order = getOrderForUpdate(updateOrderRq);
-        if (validateUpdateOrder(order, updateOrderRq)) {
-            handleBuyOrderCredit(order);
-            Order originalOrder = order.snapshot();
-            order.updateFromRequest(updateOrderRq);
-            if (!isLosesPriority(originalOrder, updateOrderRq) && updateOrderRq.getStopPrice() == 0) {
-                if (updateOrderRq.getSide() == Side.BUY) {
-                    order.getBroker().decreaseCreditBy(order.getValue());
-                }
-                return MatchResult.executed(null, List.of()); //check
+    private MatchResult executeActiveOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq){
+        if (!isLosesPriority(originalOrder, updateOrderRq) && updateOrderRq.getStopPrice() == 0) {
+            if (updateOrderRq.getSide() == Side.BUY) {
+                order.getBroker().decreaseCreditBy(order.getValue());
             }
-            else{
-                order.markAsUpdating();
-            }
-            if (updateOrderRq.getStopPrice() > 0){
+            return MatchResult.executed(null, List.of()); 
+        }
+        else{
+            order.markAsUpdating();
+            return null;
+        }
+    }
+
+    private MatchResult executeStopLimitOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, MatchResult matchResult){
+        if(matchResult == null){
+            if (updateOrderRq.getStopPrice() > 0 ){
                 orderBook.removeInActiveStopLimitByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
                 if(!((StopLimitOrder)order).checkActivation(orderBook.getLastTradePrice())){
                     return handleInactiveStopLimitOrder(order);
                 }
+                return null;
             }
             else{
                 orderBook.removeByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
+                return null;
             }
+        }
+        else{
+            return matchResult;
+        }
+    }
+
+    private MatchResult enqueueUpdatedOrder(MatchResult matchResult, Matcher matcher, Order order, Order originalOrder, EnterOrderRq updateOrderRq){
+        if(matchResult == null){
             if(matchingState == MatchingState.CONTINUOUS){
-                MatchResult matchResult = matcher.execute(order);
+                matchResult = matcher.execute(order);
                 if (matchResult.outcome() != MatchingOutcome.EXECUTED) {
                     orderBook.enqueueActiveStopLimitOrder(originalOrder);
                     if (updateOrderRq.getSide() == Side.BUY) {
@@ -196,11 +206,35 @@ public class Security {
                     }
                 }
                 return matchResult;
+            }
+            else{
+                matchResult = matcher.auctionAddToQueue(order);
+                return matchResult;
+            }
         }
         else{
-            MatchResult matchResult = matcher.auctionAddToQueue(order);
             return matchResult;
         }
+        
+    }
+
+    private MatchResult executeUpdatedOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, Matcher matcher){
+        MatchResult matchResult = executeActiveOrder(order, originalOrder, updateOrderRq);
+        matchResult = executeStopLimitOrder(order, originalOrder, updateOrderRq, matchResult);
+        matchResult = enqueueUpdatedOrder(matchResult, matcher, order, originalOrder, updateOrderRq);
+        return matchResult;
+    }
+
+
+
+    public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
+        Order order = getOrderForUpdate(updateOrderRq);
+        if (validateUpdateOrder(order, updateOrderRq)) {
+            handleBuyOrderCredit(order);
+            Order originalOrder = order.snapshot();
+            order.updateFromRequest(updateOrderRq);
+            MatchResult matchResult = executeUpdatedOrder(order, originalOrder, updateOrderRq, matcher);
+            return matchResult;
         }
         else{
             return MatchResult.notEnoughPositions();
