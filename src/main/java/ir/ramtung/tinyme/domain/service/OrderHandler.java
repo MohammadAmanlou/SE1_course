@@ -47,17 +47,17 @@ public class OrderHandler {
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
             security.deleteOrder(deleteOrderRq);
             if(security.getMatchingState() == MatchingState.AUCTION && security.getOrderBook().findInActiveByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId()) != null){
-                publishOrderRejectedEvent(2, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE));
+                publishOrderRejectedEvent(deleteOrderRq, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE));
             }
             else{
-                publishOrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId());
+                publishOrderDeletedEvent(deleteOrderRq);
             }
             if(security.getMatchingState() == MatchingState.AUCTION){
                 security.updateIndicativeOpeningPrice();
                 publishOpeningPriceEvent(security);
             }
         } catch (InvalidRequestException ex) {
-            publishOrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), ex.getReasons());
+            publishOrderRejectedEvent(deleteOrderRq, ex.getReasons());
         }
     }
 
@@ -65,7 +65,7 @@ public class OrderHandler {
         try {
             validateAndProcessOrder(enterOrderRq);
         } catch (InvalidRequestException ex) {
-            publishOrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), ex.getReasons());
+            publishOrderRejectedEvent(enterOrderRq, ex.getReasons());
         }
     }
 
@@ -96,36 +96,56 @@ public class OrderHandler {
         publishEvent(new OpeningPriceEvent(enterOrderRq.getSecurityIsin(), security.getIndicativeOpeningPrice(), security.getHighestQuantity()));
     }
 
-    private void publishOrderAcceptedEvent(long requestId, long orderId) {
-        publishEvent(new OrderAcceptedEvent(requestId, orderId));
+    private void publishOrderAcceptedEvent(EnterOrderRq enterOrderRq) {
+        publishEvent(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
     }
 
-    private void publishOrderUpdatedEvent(long requestId, long orderId) {
-        eventPublisher.publish(new OrderUpdatedEvent(requestId, orderId));
+    private void publishOrderUpdatedEvent(EnterOrderRq enterOrderRq) {
+        eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
     }
 
-    private void publishOrderActivatedEvent(long requestId, long orderId) {
-        eventPublisher.publish(new OrderActivatedEvent(requestId, orderId));
+    private void publishOrderActivatedEvent(Order order, EnterOrderRq enterOrderRq) {
+        eventPublisher.publish(new OrderActivatedEvent(order.getRequestId(), enterOrderRq.getOrderId()));
     }
 
-    private void publishOrderExecutedEvent(long requestId, long orderId, List<TradeDTO> trades) {
-        publishEvent(new OrderExecutedEvent(requestId, orderId, trades));
+    private void publishOrderActivatedEvent(Order order) {
+        eventPublisher.publish(new OrderActivatedEvent(order.getRequestId(), order.getOrderId()));
+    }
+
+    private void publishOrderExecutedEvent(EnterOrderRq enterOrderRq, MatchResult matchResult) {
+        publishEvent(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), 
+            matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+    }
+
+    private void publishOrderExecutedEvent(EnterOrderRq enterOrderRq, Order order, MatchResult matchResult) {
+        if (enterOrderRq != null) {
+            publishEvent(new OrderExecutedEvent(enterOrderRq.getRequestId(), order.getOrderId(), 
+            matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+        }
+        else {
+            publishEvent(new OrderExecutedEvent(order.getRequestId(), order.getOrderId(), 
+            matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+        }
+        
     }
     
-    private void publishOrderRejectedEvent(long requestId, long orderId, List<String> reasons) {
-        eventPublisher.publish(new OrderRejectedEvent(requestId, orderId, reasons));
+    private void publishOrderRejectedEvent(DeleteOrderRq deleteOrderRq, List<String> reasons) {
+        eventPublisher.publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), reasons));
+    }
+    private void publishOrderRejectedEvent(EnterOrderRq enterOrderRq, List<String> reasons) {
+        eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), reasons));
     }
 
-    private void publishOrderDeletedEvent(long requestId, long orderId) {
-        eventPublisher.publish(new OrderDeletedEvent(requestId, orderId));
+    private void publishOrderDeletedEvent(DeleteOrderRq deleteOrderRq) {
+        eventPublisher.publish(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
     }
 
-    private void publishTradeEvent(String securityIsin, Trade trade) {
-        publishEvent(new TradeEvent(securityIsin, trade.getPrice(), trade.getQuantity(), trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
+    private void publishTradeEvent(Security security, Trade trade) {
+        publishEvent(new TradeEvent(security.getIsin(), trade.getPrice(), trade.getQuantity(), trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
     }
 
-    private void publishSecurityStateChangedEvent(String securityIsin, MatchingState matchingState) {
-        eventPublisher.publish(new SecurityStateChangedEvent(securityIsin, matchingState));
+    private void publishSecurityStateChangedEvent(Security security, MatchingState matchingState) {
+        eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin(), matchingState));
     }
 
     private void publishEnterOrderRqOutcome(MatchResult matchResult, EnterOrderRq enterOrderRq) {
@@ -152,8 +172,7 @@ public class OrderHandler {
     private void publishExecutions(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         if (!matchResult.trades().isEmpty() && 
             securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
-            publishOrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
-                    matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList()));
+            publishOrderExecutedEvent(enterOrderRq, matchResult);
         }
     }
 
@@ -161,12 +180,12 @@ public class OrderHandler {
         Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
         Order order = currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId());
         if (order != null) {
-            publishOrderActivatedEvent(order.getRequestId(), enterOrderRq.getOrderId());
+            publishOrderActivatedEvent(order, enterOrderRq);
         } else {
             Trade lastTrade = matchResult.trades().getLast();
             Order matchedOrder = currentSecurity.getOrderBook().findByOrderId(lastTrade.getBuy().getSide(), lastTrade.getBuy().getOrderId());
             if (matchedOrder != null) {
-                publishOrderActivatedEvent(matchedOrder.getRequestId(), enterOrderRq.getOrderId());
+                publishOrderActivatedEvent(matchedOrder, enterOrderRq);
             }
         }
     }
@@ -184,12 +203,12 @@ public class OrderHandler {
             Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
             publishOpeningPriceEvent(currentSecurity, enterOrderRq);
         }
-        publishOrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId());
+        publishOrderAcceptedEvent(enterOrderRq);
     }
 
     private void handleOrderUpdate(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
-        publishOrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId());
+        publishOrderUpdatedEvent(enterOrderRq);
         if (currentSecurity.getMatchingState() == MatchingState.AUCTION) {
             currentSecurity.updateIndicativeOpeningPrice();
             publishOpeningPriceEvent(currentSecurity, enterOrderRq);
@@ -201,18 +220,17 @@ public class OrderHandler {
             Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
             Order order = currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId());
             if (order != null) {
-                publishOrderActivatedEvent(order.getRequestId(), enterOrderRq.getOrderId());
+                publishOrderActivatedEvent(order, enterOrderRq);
             } else {
                 Trade lastTrade = matchResult.trades().getLast();
                 Order matchedOrder = currentSecurity.getOrderBook().findByOrderId(lastTrade.getBuy().getSide(), lastTrade.getBuy().getOrderId());
                 if (matchedOrder != null) {
-                    publishOrderActivatedEvent(matchedOrder.getRequestId(), enterOrderRq.getOrderId());
+                    publishOrderActivatedEvent(matchedOrder, enterOrderRq);
                 }
             }
         }
         if (!matchResult.trades().isEmpty() && securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
-            publishOrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
-             matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList()));
+            publishOrderExecutedEvent(enterOrderRq, matchResult);
         }
     }
     
@@ -271,14 +289,10 @@ public class OrderHandler {
         executableOrder.getBroker().increaseCreditBy(executableOrder.getValue());
         MatchResult matchResult = matcher.execute(executableOrder);
         if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0) {
-            publishOrderActivatedEvent(executableOrder.getRequestId(), executableOrder.getOrderId());
+            publishOrderActivatedEvent(executableOrder);
         }
         if (!matchResult.trades().isEmpty()) {
-            publishOrderExecutedEvent(
-                    enterOrderRq != null ? enterOrderRq.getRequestId() : executableOrder.getRequestId(),
-                    executableOrder.getOrderId(),
-                    matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())
-            );
+            publishOrderExecutedEvent(enterOrderRq, executableOrder, matchResult);
         }
     }
     
@@ -301,7 +315,7 @@ public class OrderHandler {
             }
             MatchResult matchResult = matcher.auctionAddToQueue(executableOrder);
             if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0) {
-                publishOrderActivatedEvent(executableOrder.getRequestId(), executableOrder.getOrderId());
+                publishOrderActivatedEvent(executableOrder);
             }
         }
     }
@@ -326,9 +340,9 @@ public class OrderHandler {
             publishOpeningPriceEvent(security);
         }
         if (matchResult != null && !matchResult.trades().isEmpty()) {
-            matchResult.trades().forEach(trade -> publishTradeEvent(security.getIsin(), trade));
+            matchResult.trades().forEach(trade -> publishTradeEvent(security, trade));
         }
-        publishSecurityStateChangedEvent(security.getIsin(), security.getMatchingState());
+        publishSecurityStateChangedEvent(security, security.getMatchingState());
     }
 
 }
