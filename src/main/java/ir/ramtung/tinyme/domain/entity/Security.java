@@ -27,7 +27,6 @@ public class Security {
     private int lotSize = 1;
     @Builder.Default
     private OrderBook orderBook = new OrderBook();
-    //private double lastTradePrice;
     @Builder.Default
     private ArrayList<MatchResult> matchResults = new ArrayList<>();
     @Builder.Default
@@ -36,8 +35,6 @@ public class Security {
     private int indicativeOpeningPrice = 0 ; ///best auction price
     @Builder.Default
     private int highestQuantity = 0;
-
-
 
     private boolean checkPosition(EnterOrderRq enterOrderRq , Shareholder shareholder){
         if (enterOrderRq.getSide() == Side.SELL &&
@@ -50,13 +47,8 @@ public class Security {
         }
     }
 
-    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
-        if(!checkPosition(enterOrderRq, shareholder)){
-            return MatchResult.notEnoughPositions();
-        }
-        
+    private Order makeNewOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder){
         Order order;
-
         if ((enterOrderRq.getPeakSize() == 0) && (enterOrderRq.getStopPrice() == 0)){
             order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder, enterOrderRq.getEntryTime(),OrderStatus.NEW ,enterOrderRq.getMinimumExecutionQuantity());
@@ -66,17 +58,33 @@ public class Security {
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getStopPrice() );
             order.setRequestId(enterOrderRq.getRequestId());
-            if (!checkOrderPossibility(order)) { //kasif !!!!!!!!!!
-                return (order.getSide() == Side.BUY) ? MatchResult.notEnoughCredit() : MatchResult.notEnoughPositions();
-            }
-            if((order instanceof StopLimitOrder) && !((StopLimitOrder)order).checkActivation(orderBook.getLastTradePrice())){
-                return handleInactiveStopLimitOrder(order);
-            }
         }
         else {
             order = new IcebergOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(), OrderStatus.NEW,enterOrderRq.getMinimumExecutionQuantity());
+        }
+        return order;
+    }
+
+    private MatchResult impossibleStopLimitMatchResult(Order order){
+        return (order.getSide() == Side.BUY) ? MatchResult.notEnoughCredit() : MatchResult.notEnoughPositions();
+    }
+
+    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
+        if(!checkPosition(enterOrderRq, shareholder)){
+            return MatchResult.notEnoughPositions();
+        }
+        
+        Order order = makeNewOrder(enterOrderRq, broker, shareholder);
+
+        if (order instanceof StopLimitOrder){
+            if (!checkOrderPossibility(order)) { 
+                return impossibleStopLimitMatchResult(order);
+            }
+            if(!((StopLimitOrder)order).checkActivation(orderBook.getLastTradePrice())){
+                return handleInactiveStopLimitOrder(order);
+            }
         }
 
         if(matchingState == MatchingState.CONTINUOUS){
