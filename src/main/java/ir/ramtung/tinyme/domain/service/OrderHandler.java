@@ -51,7 +51,7 @@ public class OrderHandler {
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
             security.deleteOrder(deleteOrderRq);
             if(isDeleteStopLimitInAuction(security, deleteOrderRq)){
-                publishOrderRejectedEvent(2, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE));
+                publishOrderRejectedEvent(deleteOrderRq, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE));
             }
             else{
                 publishOrderDeletedEvent(deleteOrderRq);
@@ -67,7 +67,8 @@ public class OrderHandler {
 
     public void handleEnterOrder(EnterOrderRq enterOrderRq) {
         try {
-            validateAndProcessOrder(enterOrderRq);
+            validateOrder(enterOrderRq);
+            ProcessOrder(enterOrderRq);
         } catch (InvalidRequestException ex) {
             publishOrderRejectedEvent(enterOrderRq, ex.getReasons());
         }
@@ -84,6 +85,7 @@ public class OrderHandler {
     private void publishEvent(Event event) {
         eventPublisher.publish(event);
     }
+    
     private void publishNotEnoughCredit(EnterOrderRq enterOrderRq) {
         publishEvent(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
     }
@@ -136,6 +138,7 @@ public class OrderHandler {
     private void publishOrderRejectedEvent(DeleteOrderRq deleteOrderRq, List<String> reasons) {
         eventPublisher.publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), reasons));
     }
+    
     private void publishOrderRejectedEvent(EnterOrderRq enterOrderRq, List<String> reasons) {
         eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), reasons));
     }
@@ -219,36 +222,18 @@ public class OrderHandler {
         }
     }
     
-    private void handleStopPriceAndTrades(MatchResult matchResult, EnterOrderRq enterOrderRq) {
-        if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
-            Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
-            Order order = currentSecurity.getOrderBook().findByOrderId(enterOrderRq.getSide(), enterOrderRq.getOrderId());
-            if (order != null) {
-                publishOrderActivatedEvent(order, enterOrderRq);
-            } else {
-                Trade lastTrade = matchResult.trades().getLast();
-                Order matchedOrder = currentSecurity.getOrderBook().findByOrderId(lastTrade.getBuy().getSide(), lastTrade.getBuy().getOrderId());
-                if (matchedOrder != null) {
-                    publishOrderActivatedEvent(matchedOrder, enterOrderRq);
-                }
-            }
-        }
-        if (!matchResult.trades().isEmpty() && securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
-            publishOrderExecutedEvent(enterOrderRq, matchResult);
-        }
-    }
-    
     private void activateStopLimitOrders(Security security , EnterOrderRq enterOrderRq){
         if(security.getMatchingState() == MatchingState.CONTINUOUS){
             execInactiveStopLimitOrders(security , enterOrderRq);
         }
     }
 
-    
-    
-    private void validateAndProcessOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException {
+    private void validateOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException{
         ValidateRq validateRq = new ValidateRq(enterOrderRq, securityRepository, brokerRepository, shareholderRepository);
         validateRq.validateEnterOrderRq(enterOrderRq);
+    }
+
+    private void ProcessOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException {
         Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
         Broker broker = brokerRepository.findBrokerById(enterOrderRq.getBrokerId());
         Shareholder shareholder = shareholderRepository.findShareholderById(enterOrderRq.getShareholderId());
