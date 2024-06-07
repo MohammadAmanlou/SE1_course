@@ -41,12 +41,16 @@ public class OrderHandler {
         this.matcher = matcher;
     }
 
+    private boolean isDeleteStopLimitInAuction(Security security , DeleteOrderRq deleteOrderRq){
+        return security.getMatchingState() == MatchingState.AUCTION && security.getOrderBook().findInActiveByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId()) != null ; 
+    }
+
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
         try {
             validateDeleteOrderRq(deleteOrderRq);
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
             security.deleteOrder(deleteOrderRq);
-            if(security.getMatchingState() == MatchingState.AUCTION && security.getOrderBook().findInActiveByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId()) != null){
+            if(isDeleteStopLimitInAuction(security, deleteOrderRq)){
                 publishOrderRejectedEvent(2, 200, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE));
             }
             else{
