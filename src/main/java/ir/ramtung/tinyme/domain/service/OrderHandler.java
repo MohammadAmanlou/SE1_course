@@ -49,10 +49,10 @@ public class OrderHandler {
             case NOT_ENOUGH_POSITIONS:
                 handleNotEnoughPositions(enterOrderRq);
                 return;
+            default:
+                handleOrderEntryType(matchResult, enterOrderRq);
+                handleStopPriceAndTrades(matchResult, enterOrderRq);
         }
-        
-        handleOrderEntryType(matchResult, enterOrderRq);
-        handleStopPriceAndTrades(matchResult, enterOrderRq);
     }
     
     private void handleNotEnoughCredit(EnterOrderRq enterOrderRq) {
