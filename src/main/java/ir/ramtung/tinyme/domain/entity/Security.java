@@ -145,10 +145,14 @@ public class Security {
         return order;
     }
 
-    public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
-        Order order = getOrderForUpdate(updateOrderRq);
+    private void validateUpdateOrder(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
         ValidateRq validateRq = new ValidateRq(updateOrderRq, null, null, null);
         validateRq.validateUpdateOrderRq(order, updateOrderRq, orderBook);
+    }
+
+    public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
+        Order order = getOrderForUpdate(updateOrderRq);
+        validateUpdateOrder(order, updateOrderRq);
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
                         orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())) {
