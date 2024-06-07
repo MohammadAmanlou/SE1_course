@@ -129,7 +129,7 @@ public class Security {
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
         Order order = findOrder(deleteOrderRq);
-        handleBuyDeletedOrderCredit(order);
+        handleBuyOrderCredit(order);
         removeOrder(order, deleteOrderRq); 
     }
 
