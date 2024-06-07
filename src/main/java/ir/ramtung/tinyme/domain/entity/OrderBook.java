@@ -171,30 +171,39 @@ public class OrderBook {
         this.lastTradePrice = lastTradePrice;
     }
 
+    private boolean shouldActivateSellOrder(Order order) {
+        return (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL && (order instanceof StopLimitOrder));
+    }
+    
+    private boolean shouldActivateBuyOrder(Order order) {
+        return (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY && (order instanceof StopLimitOrder));
+    }
+    
     public void activateSellStopLimitOrders() {
         Iterator<Order> iterator = inactiveSellStopLimitOrders.iterator();
         while (iterator.hasNext()) {
             Order order = iterator.next();
-            if ((order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL && (order instanceof StopLimitOrder))) {
-                ((StopLimitOrder)order).setIsActive(true);
+            if (shouldActivateSellOrder(order)) {
+                ((StopLimitOrder) order).setIsActive(true);
                 iterator.remove();
                 activeStopLimitOrderEnqueue(order);
             }
         }
     }
-
+    
     public void activateBuyStopLimitOrders() {
         Iterator<Order> iterator = inactiveBuyStopLimitOrders.iterator();
         while (iterator.hasNext()) {
             Order order = iterator.next();
-            if ((order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY  && (order instanceof StopLimitOrder))) {
-                iterator.remove(); 
+            if (shouldActivateBuyOrder(order)) {
+                iterator.remove();
                 order.getBroker().increaseCreditBy(order.getPrice() * order.getQuantity());
-                ((StopLimitOrder)order).setIsActive(true);
-                activeStopLimitOrderEnqueue(order);                
+                ((StopLimitOrder) order).setIsActive(true);
+                activeStopLimitOrderEnqueue(order);
             }
         }
     }
+    
 
     public List<StopLimitOrder> activateStopLimitOrders() {
         List<StopLimitOrder> activatedOrders = new ArrayList<>();
