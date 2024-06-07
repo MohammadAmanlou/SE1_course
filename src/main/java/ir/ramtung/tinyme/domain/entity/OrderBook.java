@@ -156,16 +156,18 @@ public class OrderBook {
         getQueue(side).removeFirst();
     }
 
-    public int totalSellQuantityByShareholder(Shareholder shareholder) {
-        return (sellQueue.stream()
+    private int totalQuantityByShareholder(List<Order> orders, Shareholder shareholder) {
+        return orders.stream()
                 .filter(order -> order.getShareholder().equals(shareholder))
                 .mapToInt(Order::getTotalQuantity)
-                .sum() + 
-                inactiveSellStopLimitOrders.stream()
-                .filter(order -> order.getShareholder().equals(shareholder))
-                .mapToInt(Order::getTotalQuantity)
-                .sum());
+                .sum();
     }
+    
+    public int totalSellQuantityByShareholder(Shareholder shareholder) {
+        return totalQuantityByShareholder(sellQueue, shareholder) +
+               totalQuantityByShareholder(inactiveSellStopLimitOrders, shareholder);
+    }
+    
 
     public void setLastTradePrice(double lastTradePrice) {
         this.lastTradePrice = lastTradePrice;
