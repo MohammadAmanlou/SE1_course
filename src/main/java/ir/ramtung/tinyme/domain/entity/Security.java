@@ -96,13 +96,20 @@ public class Security {
         return processOrder(order, matcher);
     }
 
-    public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
+    private Order findOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException{
         Order order = orderBook.findByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
         if (order == null) {
             order = orderBook.findInActiveByOrderId(deleteOrderRq.getSide() , deleteOrderRq.getOrderId());
+            if (order == null){
+                throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
+            }
         }
-        if (order == null)
-            throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
+        return order;
+    }
+
+    public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
+        Order order = findOrder(deleteOrderRq);
+        
         if (order.getSide() == Side.BUY )
             order.getBroker().increaseCreditBy(order.getValue());
         if (!orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId())){
