@@ -243,13 +243,8 @@ public class OrderHandler {
     }
 
     private void validateDeleteOrderRq(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
-        List<String> errors = new LinkedList<>();
-        if (deleteOrderRq.getOrderId() <= 0)
-            errors.add(Message.INVALID_ORDER_ID);
-        if (securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin()) == null)
-            errors.add(Message.UNKNOWN_SECURITY_ISIN);
-        if (!errors.isEmpty())
-            throw new InvalidRequestException(errors);
+        ValidateRq validateRq = new ValidateRq(null, securityRepository, brokerRepository, shareholderRepository);
+        validateRq.validateDeleteOrderRq(deleteOrderRq);
     }
 
     public void handleChangeMatchStateRq(ChangeMatchStateRq changeMatchStateRq) {

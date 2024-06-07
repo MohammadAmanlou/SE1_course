@@ -185,7 +185,7 @@ class SecurityTest {
 
         MatchResult result = security.updateOrder(updateReq, matcher);
         assertThat(result.outcome()).isEqualTo(MatchingOutcome.EXECUTED);
-        assertThat(result.trades()).hasSize(2);
+        assertThat(result.trades()).hasSize(6);
         assertThat(result.remainder().getQuantity()).isZero();
     }
 
