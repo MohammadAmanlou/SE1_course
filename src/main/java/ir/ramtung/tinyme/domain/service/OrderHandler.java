@@ -126,15 +126,19 @@ public class OrderHandler {
 
     public void handleEnterOrder(EnterOrderRq enterOrderRq) {
         try {
-            validateAndProcessOrder(enterOrderRq);
+            validateOrder(enterOrderRq);
+            processOrder(enterOrderRq);
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), ex.getReasons()));
         }
     }
-    
-    private void validateAndProcessOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException {
+
+    private void validateOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException{
         ValidateRq validateRq = new ValidateRq(enterOrderRq, securityRepository, brokerRepository, shareholderRepository);
         validateRq.validateEnterOrderRq(enterOrderRq);
+    }
+    
+    private void processOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException {
         Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
         Broker broker = brokerRepository.findBrokerById(enterOrderRq.getBrokerId());
         Shareholder shareholder = shareholderRepository.findShareholderById(enterOrderRq.getShareholderId());
