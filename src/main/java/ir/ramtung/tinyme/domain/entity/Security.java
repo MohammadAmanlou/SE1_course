@@ -107,11 +107,12 @@ public class Security {
         return order;
     }
 
-    public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
-        Order order = findOrder(deleteOrderRq);
-        
-        if (order.getSide() == Side.BUY )
+    private void handleBuyDeletedOrderCredit(Order order){
+        if (order.getSide() == Side.BUY)
             order.getBroker().increaseCreditBy(order.getValue());
+    }
+
+    private void removeOrder(Order order, DeleteOrderRq deleteOrderRq){
         if (!orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId())){
             if (matchingState == MatchingState.CONTINUOUS){
                 orderBook.removeInActiveStopLimitByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
@@ -121,8 +122,13 @@ public class Security {
                     order.getBroker().decreaseCreditBy(order.getValue());
                 }
             }
-            
         }
+    }
+
+    public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
+        Order order = findOrder(deleteOrderRq);
+        handleBuyDeletedOrderCredit(order);
+        removeOrder(order, deleteOrderRq); 
     }
 
     private Order getOrderForUpdate(EnterOrderRq upEnterOrderRq) throws InvalidRequestException{
@@ -130,9 +136,9 @@ public class Security {
         order = orderBook.findInActiveByOrderId(upEnterOrderRq.getSide(), upEnterOrderRq.getOrderId());
         if (order == null){
             order = orderBook.findByOrderId(upEnterOrderRq.getSide(), upEnterOrderRq.getOrderId());
-        }
-        if (order == null) {
-            throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
+            if (order == null) {
+                throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
+            }
         }
         return order;
     }
