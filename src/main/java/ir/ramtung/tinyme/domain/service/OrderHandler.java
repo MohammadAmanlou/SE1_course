@@ -185,6 +185,10 @@ public class OrderHandler {
         if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0) {
             eventPublisher.publish(new OrderActivatedEvent(executableOrder.getRequestId(), executableOrder.getOrderId()));
         }
+        publishTrades(matchResult, enterOrderRq, executableOrder);
+    }
+
+    private void publishTrades(MatchResult matchResult, EnterOrderRq enterOrderRq, Order executableOrder){
         if (!matchResult.trades().isEmpty()) {
             eventPublisher.publish(new OrderExecutedEvent(
                     enterOrderRq != null ? enterOrderRq.getRequestId() : executableOrder.getRequestId(),
