@@ -109,7 +109,7 @@ public class Security {
         return order;
     }
 
-    private void handleBuyDeletedOrderCredit(Order order){
+    private void handleBuyOrderCredit(Order order){
         if (order.getSide() == Side.BUY)
             order.getBroker().increaseCreditBy(order.getValue());
     }
@@ -149,7 +149,7 @@ public class Security {
         ValidateRq validateRq = new ValidateRq(updateOrderRq, null, null, null);
         validateRq.validateUpdateOrderRq(order, updateOrderRq, orderBook);
     }
-
+    
     public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         Order order = getOrderForUpdate(updateOrderRq);
         validateUpdateOrder(order, updateOrderRq);
@@ -163,9 +163,7 @@ public class Security {
                 || updateOrderRq.getPrice() != order.getPrice()
                 || ((order instanceof IcebergOrder icebergOrder) && (icebergOrder.getPeakSize() < updateOrderRq.getPeakSize()));
 
-        if (updateOrderRq.getSide() == Side.BUY) {
-            order.getBroker().increaseCreditBy(order.getValue());
-        }
+        handleBuyOrderCredit(order);
         Order originalOrder = order.snapshot();
         order.updateFromRequest(updateOrderRq);
         if (!losesPriority && updateOrderRq.getStopPrice() == 0) {
