@@ -74,16 +74,5 @@ public final class MatchResult {
                 "remainder=" + remainder + ", " +
                 "trades=" + trades + ']';
     }
-
-    public double getPrice(){
-        try {
-            return trades.getLast().getPrice();
-        }
-        catch (NoSuchElementException e) {
-            // Handle the exception here, e.g. return a default value or log the error
-            return 0.0; // Example of returning a default value
-        }
-    }
     
-
 }
