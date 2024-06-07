@@ -35,12 +35,16 @@ public class StopLimitOrder extends Order {
 
     @Override
     public Order snapshot() {
-        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
+        return createSnapshot(quantity);
     }
-
+    
     @Override
     public Order snapshotWithQuantity(int newQuantity) {
-        return new StopLimitOrder(orderId, security, side, newQuantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
+        return createSnapshot(newQuantity);
+    }
+    
+    private Order createSnapshot(int quantity) {
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
     }
 
     @Override
