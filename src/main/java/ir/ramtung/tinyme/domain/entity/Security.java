@@ -176,7 +176,7 @@ public class Security {
         }
     }
 
-    private MatchResult executeStopLimitOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, MatchResult matchResult){
+    private MatchResult removePrevOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, MatchResult matchResult){
         if(matchResult == null){
             if (updateOrderRq.getStopPrice() > 0 ){
                 orderBook.removeInActiveStopLimitByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
@@ -220,12 +220,10 @@ public class Security {
 
     private MatchResult executeUpdatedOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, Matcher matcher){
         MatchResult matchResult = executeActiveOrder(order, originalOrder, updateOrderRq);
-        matchResult = executeStopLimitOrder(order, originalOrder, updateOrderRq, matchResult);
+        matchResult = removePrevOrder(order, originalOrder, updateOrderRq, matchResult);
         matchResult = enqueueUpdatedOrder(matchResult, matcher, order, originalOrder, updateOrderRq);
         return matchResult;
     }
-
-
 
     public MatchResult updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         Order order = getOrderForUpdate(updateOrderRq);
