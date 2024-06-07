@@ -65,15 +65,6 @@ public class StopLimitOrder extends Order {
         }
     }
 
-    public boolean queuesBefore(StopLimitOrder order) {
-        if (order.getSide() == Side.BUY) {
-            return order.getStopPrice() < stopPrice;
-        } 
-        else {
-            return order.getStopPrice() > stopPrice;
-        }
-    }
-
     public boolean checkActivation(double lastTradePrice){
         if(side == Side.SELL){
             return lastTradePrice <= stopPrice;
