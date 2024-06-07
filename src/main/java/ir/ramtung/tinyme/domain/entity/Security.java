@@ -71,32 +71,29 @@ public class Security {
         return (order.getSide() == Side.BUY) ? MatchResult.notEnoughCredit() : MatchResult.notEnoughPositions();
     }
 
+    private MatchResult processOrder(Order order , Matcher matcher){
+        if(matchingState == MatchingState.CONTINUOUS){
+            return (matcher.execute(order));
+        }
+        else {
+            return (matcher.auctionAddToQueue(order));
+        }
+    }
+
     public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
         if(!checkPosition(enterOrderRq, shareholder)){
             return MatchResult.notEnoughPositions();
         }
-        
         Order order = makeNewOrder(enterOrderRq, broker, shareholder);
-
         if (order instanceof StopLimitOrder){
-            if (!checkOrderPossibility(order)) { 
+            if (!checkOrderPossibility(order)){ 
                 return impossibleStopLimitMatchResult(order);
             }
             if(!((StopLimitOrder)order).checkActivation(orderBook.getLastTradePrice())){
                 return handleInactiveStopLimitOrder(order);
             }
         }
-
-        if(matchingState == MatchingState.CONTINUOUS){
-            MatchResult matchResult = matcher.execute(order);
-            return matchResult;
-        }
-        else {
-            MatchResult matchResult = matcher.auctionAddToQueue(order);
-            return matchResult;
-        }
-        
-        
+        return processOrder(order, matcher);
     }
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
