@@ -128,7 +128,7 @@ public class OrderHandler {
         eventPublisher.publish(new SecurityStateChangedEvent(securityIsin, matchingState));
     }
 
-    private void publishOutcome(MatchResult matchResult, EnterOrderRq enterOrderRq) {
+    private void publishEnterOrderRqOutcome(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         switch (matchResult.outcome()) {
             case NOT_ENOUGH_CREDIT:
                 publishNotEnoughCredit(enterOrderRq);
@@ -237,7 +237,7 @@ public class OrderHandler {
         else
             matchResult = security.updateOrder(enterOrderRq, matcher);
     
-        publishOutcome(matchResult, enterOrderRq);
+        publishEnterOrderRqOutcome(matchResult, enterOrderRq);
         activateStopLimitOrders(security, enterOrderRq);
     }
     
