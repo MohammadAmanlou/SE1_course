@@ -93,22 +93,49 @@ public class Matcher {
     }
 
 
-    public MatchResult auctionAddToQueue(Order order){
-        if (order.getSide() == Side.BUY) {
-            if (!order.getBroker().hasEnoughCredit(order.getValue())) {
-                return MatchResult.notEnoughCredit();
-            }
-            order.getBroker().decreaseCreditBy(order.getValue());
-        }
-        if (order.getSide() == Side.SELL) {
-            if (!order.getShareholder().hasEnoughPositionsOn(order.getSecurity() , order.getQuantity())) {
-                return MatchResult.notEnoughPositions();
-            }
-        } // kasif 
+    public MatchResult auctionAddToQueue(Order order) {
+        MatchResult creditResult = checkBuyerCreditIfNeeded(order);
+        if (creditResult != null) return creditResult;
 
+        MatchResult positionResult = checkSellerPositionsIfNeeded(order);
+        if (positionResult != null) return positionResult;
+
+        enqueueOrderAndUpdatePrice(order);
+        return MatchResult.orderEnqueuedAuction();
+    }
+
+    private MatchResult checkBuyerCreditIfNeeded(Order order) {
+        if (order.getSide() == Side.BUY) {
+            return checkBuyerCredit(order);
+        }
+        return null;
+    }
+
+    private MatchResult checkSellerPositionsIfNeeded(Order order) {
+        if (order.getSide() == Side.SELL) {
+            return checkSellerPositions(order);
+        }
+        return null;
+    }
+
+    private MatchResult checkBuyerCredit(Order order) {
+        if (!order.getBroker().hasEnoughCredit(order.getValue())) {
+            return MatchResult.notEnoughCredit();
+        }
+        order.getBroker().decreaseCreditBy(order.getValue());
+        return null;
+    }
+
+    private MatchResult checkSellerPositions(Order order) {
+        if (!order.getShareholder().hasEnoughPositionsOn(order.getSecurity(), order.getQuantity())) {
+            return MatchResult.notEnoughPositions();
+        }
+        return null;
+    }
+
+    private void enqueueOrderAndUpdatePrice(Order order) {
         order.getSecurity().getOrderBook().enqueue(order);
         order.getSecurity().updateIndicativeOpeningPrice();
-        return MatchResult.orderEnqueuedAuction();
     }
 
     public MatchResult execute(Order order) {
