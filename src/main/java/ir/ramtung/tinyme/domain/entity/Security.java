@@ -263,25 +263,12 @@ public class Security {
 
     public MatchResult ChangeMatchStateRq(MatchingState state , Matcher matcher){
         updateIndicativeOpeningPrice();
-        if (state == MatchingState.CONTINUOUS &&  matchingState == MatchingState.AUCTION){
-            MatchResult matchResult = openingProcess(matcher);
-            matchingState =  MatchingState.CONTINUOUS ;
-            return matchResult;
+        MatchResult matchResult = null;
+        if(matchingState == MatchingState.AUCTION){
+            matchResult = openingProcess(matcher);
         }
-        else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.AUCTION){
-            MatchResult matchResult = openingProcess(matcher);
-            matchingState =  MatchingState.AUCTION ;
-            return matchResult ;
-
-        }
-        else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.CONTINUOUS){
-            matchingState =  MatchingState.AUCTION ;
-            return null;
-        }
-        else {
-            matchingState =  MatchingState.CONTINUOUS ;
-            return null;
-        }
+        matchingState = state;
+        return matchResult;
     }
 
     private MatchResult openingProcess(Matcher matcher){
