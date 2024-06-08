@@ -140,12 +140,28 @@ public class Matcher {
 
     public MatchResult execute(Order order) {
         MatchResult result = match(order);
-        if (result.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT)
-            return result;
-        if (result.outcome() == MatchingOutcome.NOT_ENOUGH_QUANTITIES_MATCHED)
-            return result;
-
-        if (((result.remainder().getQuantity() > 0))) {
+        if (isMatchingOutcomeNotEnough(result)) return result;
+    
+        result = processRemainder(order, result);
+        updateLastTradePriceAndPositions(order, result);
+        return result;
+    }
+    
+    public MatchResult auctionExecute(Order order, int indicativeOpeningPrice) {
+        MatchResult result = auctionMatch(order, indicativeOpeningPrice);
+        if (isMatchingOutcomeNotEnough(result)) return result;
+    
+        result = processRemainderForAuction(order, result);
+        updateLastTradePriceAndPositions(order, result);
+        return result;
+    }
+    
+    private boolean isMatchingOutcomeNotEnough(MatchResult result) {
+        return result.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT || result.outcome() == MatchingOutcome.NOT_ENOUGH_QUANTITIES_MATCHED;
+    }
+    
+    private MatchResult processRemainder(Order order, MatchResult result) {
+        if (result.remainder().getQuantity() > 0) {
             if (order.getSide() == Side.BUY) {
                 if (!order.getBroker().hasEnoughCredit(order.getValue()) && !(order instanceof StopLimitOrder)) {
                     rollbackBuyTrades(order, result.trades());
@@ -155,26 +171,17 @@ public class Matcher {
             }
             order.getSecurity().getOrderBook().enqueue(result.remainder());
         }
-        if (!result.trades().isEmpty()) {
-            order.getSecurity().getOrderBook().setLastTradePrice(result.trades().getLast().getPrice());
-            for (Trade trade : result.trades()) {
-                trade.getBuy().getShareholder().incPosition(trade.getSecurity(), trade.getQuantity());
-                trade.getSell().getShareholder().decPosition(trade.getSecurity(), trade.getQuantity());
-            }
-        }
         return result;
     }
-
-    public MatchResult auctionExecute(Order order , int indicativeOpeningPrice) {
-        MatchResult result = auctionMatch(order , indicativeOpeningPrice);
-        if (result.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT)
-            return result;
-        if (result.outcome() == MatchingOutcome.NOT_ENOUGH_QUANTITIES_MATCHED)
-            return result;
-
-        if (((result.remainder().getQuantity() > 0))) {
+    
+    private MatchResult processRemainderForAuction(Order order, MatchResult result) {
+        if (result.remainder().getQuantity() > 0) {
             order.getSecurity().getOrderBook().enqueue(result.remainder());
         }
+        return result;
+    }
+    
+    private void updateLastTradePriceAndPositions(Order order, MatchResult result) {
         if (!result.trades().isEmpty()) {
             order.getSecurity().getOrderBook().setLastTradePrice(result.trades().getLast().getPrice());
             for (Trade trade : result.trades()) {
@@ -182,8 +189,8 @@ public class Matcher {
                 trade.getSell().getShareholder().decPosition(trade.getSecurity(), trade.getQuantity());
             }
         }
-        return result;
     }
+    
 
     public MatchResult auctionMatch(Order newOrder , int indicativeOpeningPrice) {
         OrderBook orderBook = newOrder.getSecurity().getOrderBook();
