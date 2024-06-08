@@ -274,8 +274,8 @@ public class Security {
     private MatchResult openingProcess(Matcher matcher){
         updateIndicativeOpeningPrice();
         LinkedList<Trade> trades = new LinkedList<>();
-        int max = orderBook.getSellQueue().size();
-        for(int i = 0 ; i < max ; i++){
+        int sellQueueSize = orderBook.getSellQueue().size();
+        for(int i = 0 ; i < sellQueueSize ; i++){
             MatchResult matchResult = matcher.auctionExecute(orderBook.getSellQueue().get(i), indicativeOpeningPrice);
             if (matchResult.trades().size() == 0){
                 continue;
@@ -370,7 +370,6 @@ public class Security {
     }
 
     public int updateIndicativeOpeningPrice( ){
-        //if?
         LinkedList <Integer> allOrdersPrices = new LinkedList<>() ;
 
         for (Order buyOrder : orderBook.getBuyQueue()) {
