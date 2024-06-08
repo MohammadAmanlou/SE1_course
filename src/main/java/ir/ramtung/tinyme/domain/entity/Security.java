@@ -171,57 +171,55 @@ public class Security {
         if (!isLosesPriority(originalOrder, updateOrderRq) && updateOrderRq.getStopPrice() == 0) {
             decreaseBuyCredit(order);
             return MatchResult.executed(null, List.of()); 
-        }
-        else{
+        } else{
             order.markAsUpdating();
             return null;
         }
     }
 
     private MatchResult removePrevOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, MatchResult matchResult){
-        if(matchResult == null){
-            if (updateOrderRq.getStopPrice() > 0 ){
-                orderBook.removeInActiveStopLimitByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
-                if(!((StopLimitOrder)order).checkActivation(orderBook.getLastTradePrice())){
-                    return handleInactiveStopLimitOrder(order);
-                }
-                return null;
+        if(matchResult == null && updateOrderRq.getStopPrice() > 0){
+            orderBook.removeInActiveStopLimitByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
+            if(!((StopLimitOrder)order).checkActivation(orderBook.getLastTradePrice())){
+                return handleInactiveStopLimitOrder(order);
             }
-            else{
-                orderBook.removeByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
-                return null;
-            }
+            return null;
+        }
+        else if (matchResult == null){
+            orderBook.removeByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
+            return null;
         }
         else{
             return matchResult;
         }
     }
 
-    private MatchResult enqueueUpdatedOrder(MatchResult matchResult, Matcher matcher, Order order, Order originalOrder, EnterOrderRq updateOrderRq){
-        if(matchResult == null){
-            if(matchingState == MatchingState.CONTINUOUS){
-                matchResult = matcher.execute(order);
-                if (matchResult.outcome() != MatchingOutcome.EXECUTED) {
-                    orderBook.enqueueActiveStopLimitOrder(originalOrder);
-                    decreaseBuyCredit(originalOrder);
-                }
-                return matchResult;
-            }
-            else{
-                matchResult = matcher.auctionAddToQueue(order);
-                return matchResult;
-            }
+    private void enqueueUpdatedOrder(MatchResult matchResult, Order originalOrder){
+        if (matchResult.outcome() != MatchingOutcome.EXECUTED) {
+            orderBook.enqueueActiveStopLimitOrder(originalOrder);
+            decreaseBuyCredit(originalOrder);
+        }
+    }
+    
+    private MatchResult execUpdatedOrder(MatchResult matchResult, Matcher matcher, Order order, Order originalOrder, EnterOrderRq updateOrderRq){
+        if(matchResult == null && matchingState == MatchingState.CONTINUOUS){
+            matchResult = matcher.execute(order);
+            enqueueUpdatedOrder(matchResult, originalOrder);
+            return matchResult;
+        }
+        else if (matchResult == null){
+            matchResult = matcher.auctionAddToQueue(order);
+            return matchResult;
         }
         else{
             return matchResult;
         }
-        
     }
 
-    private MatchResult executeUpdatedOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, Matcher matcher){
+    private MatchResult processUpdatedOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, Matcher matcher){
         MatchResult matchResult = executeActiveOrder(order, originalOrder, updateOrderRq);
         matchResult = removePrevOrder(order, originalOrder, updateOrderRq, matchResult);
-        matchResult = enqueueUpdatedOrder(matchResult, matcher, order, originalOrder, updateOrderRq);
+        matchResult = execUpdatedOrder(matchResult, matcher, order, originalOrder, updateOrderRq);
         return matchResult;
     }
 
@@ -231,7 +229,7 @@ public class Security {
             handleBuyOrderCredit(order);
             Order originalOrder = order.snapshot();
             order.updateFromRequest(updateOrderRq);
-            MatchResult matchResult = executeUpdatedOrder(order, originalOrder, updateOrderRq, matcher);
+            MatchResult matchResult = processUpdatedOrder(order, originalOrder, updateOrderRq, matcher);
             return matchResult;
         }
         else{
