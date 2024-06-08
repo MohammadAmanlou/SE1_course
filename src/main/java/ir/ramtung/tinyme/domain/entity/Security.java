@@ -456,7 +456,5 @@ public class Security {
         return bestAuctionPrice;
     }
 
-    
 }
-
 
