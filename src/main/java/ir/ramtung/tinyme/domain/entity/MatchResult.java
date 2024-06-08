@@ -3,7 +3,6 @@ package ir.ramtung.tinyme.domain.entity;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.NoSuchElementException;
 
 public final class MatchResult {
     private final MatchingOutcome outcome;

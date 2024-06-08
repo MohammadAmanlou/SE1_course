@@ -5,7 +5,6 @@ import ir.ramtung.tinyme.domain.entity.*;
 import ir.ramtung.tinyme.domain.service.OrderHandler;
 import ir.ramtung.tinyme.messaging.EventPublisher;
 import ir.ramtung.tinyme.messaging.Message;
-import ir.ramtung.tinyme.messaging.TradeDTO;
 import ir.ramtung.tinyme.messaging.event.*;
 import ir.ramtung.tinyme.messaging.request.DeleteOrderRq;
 import ir.ramtung.tinyme.messaging.request.EnterOrderRq;
@@ -140,16 +139,12 @@ public class StopLimitOrderTest {
     @Test
     void queued_buy_stop_limit_order_matched_completely_with_one_new_trade() {
         Order matchingBuyOrder = new StopLimitOrder(100, security, Side.BUY, 1000, 15500, broker1, shareholder,   10 , 0);
-        Order incomingSellOrder = new StopLimitOrder(200, security, Side.SELL, 300, 15450, broker2, shareholder,   10 , 0);
         security.getOrderBook().enqueue(matchingBuyOrder);
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 300, LocalDateTime.now(), Side.SELL, 
         300, 15450, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 100));
-        Trade trade = new Trade(security, matchingBuyOrder.getPrice(), incomingSellOrder.getQuantity(),
-        matchingBuyOrder, incomingSellOrder);
         assertThat(broker1.getCredit()).isEqualTo(100000 );
         assertThat(broker2.getCredit()).isEqualTo(4750000 );
         verify(eventPublisher).publish((new OrderAcceptedEvent(1, 300)));
-      //  verify(eventPublisher).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade))));
     }
 
     @Test

@@ -9,8 +9,6 @@ import java.util.ListIterator;
 import java.util.function.Predicate;
 import java.util.Iterator;
 
-import org.apache.commons.lang3.ObjectUtils.Null;
-
 @Getter
 public class OrderBook {
     private final LinkedList<Order> buyQueue;

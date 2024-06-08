@@ -2,7 +2,6 @@ package ir.ramtung.tinyme.messaging;
 
 import ir.ramtung.tinyme.messaging.event.OrderExecutedEvent;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

@@ -14,15 +14,12 @@ import ir.ramtung.tinyme.messaging.request.OrderEntryType;
 import ir.ramtung.tinyme.repository.BrokerRepository;
 import ir.ramtung.tinyme.repository.SecurityRepository;
 import ir.ramtung.tinyme.repository.ShareholderRepository;
-import lombok.val;
 
-import org.springframework.boot.availability.ReadinessState;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @Service
