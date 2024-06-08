@@ -271,8 +271,7 @@ public class Security {
         return matchResult;
     }
 
-    private MatchResult openingProcess(Matcher matcher){
-        updateIndicativeOpeningPrice();
+    private LinkedList<Trade> openingSellOrders(Matcher matcher){
         LinkedList<Trade> trades = new LinkedList<>();
         int sellQueueSize = orderBook.getSellQueue().size();
         for(int i = 0 ; i < sellQueueSize ; i++){
@@ -284,6 +283,10 @@ public class Security {
                 trades.add(trade);
             }
         }
+        return trades;
+    }
+
+    private void removeTradedSells(){
         Iterator<Order> sellIterator = orderBook.getSellQueue().iterator();
         while (sellIterator.hasNext()) {
             Order sellOrder = sellIterator.next();
@@ -291,7 +294,9 @@ public class Security {
                 sellIterator.remove();
             }
         }
-        
+    }
+
+    private void removeTradedBuys(){
         Iterator<Order> buyIterator = orderBook.getBuyQueue().iterator();
         while (buyIterator.hasNext()) {
             Order buyOrder = buyIterator.next();
@@ -299,12 +304,23 @@ public class Security {
                 buyIterator.remove();
             }
         }
+    }
+
+    private void removeTradedOrders(){
+        removeTradedSells();
+        removeTradedBuys();
+    }
+
+    private MatchResult openingProcess(Matcher matcher){
+        updateIndicativeOpeningPrice();
+        LinkedList<Trade> trades = openingSellOrders(matcher);
+        removeTradedOrders();
         MatchResult matchResult = MatchResult.traded(trades);
         return matchResult;
     }
 
     private int getTotalQuantityInOrderList(LinkedList <Order> orders){
-        int  sumQuantity = 0;
+        int sumQuantity = 0;
         for (Order order : orders){
             sumQuantity += order.getTotalQuantity();
         }
