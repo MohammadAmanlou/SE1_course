@@ -429,17 +429,27 @@ public class Security {
         return 0;
     }
 
-    public int updateIndicativeOpeningPrice( ){
-        LinkedList <Integer> allOrdersPrices = new LinkedList<>() ;
-
-        for (Order buyOrder : orderBook.getBuyQueue()) {
-            allOrdersPrices.add(buyOrder.getPrice());
+    public int updateIndicativeOpeningPrice() {
+        LinkedList<Integer> allOrdersPrices = gatherAllOrderPrices();
+        return setIndicativeOpeningPrice(allOrdersPrices);
+    }
+    
+    private LinkedList<Integer> gatherAllOrderPrices() {
+        LinkedList<Integer> allOrdersPrices = new LinkedList<>();
+        gatherPricesFromQueue(orderBook.getBuyQueue(), allOrdersPrices);
+        gatherPricesFromQueue(orderBook.getSellQueue(), allOrdersPrices);
+        return allOrdersPrices;
+    }
+    
+    private void gatherPricesFromQueue(LinkedList<Order> queue, LinkedList<Integer> allOrdersPrices) {
+        for (Order order : queue) {
+            allOrdersPrices.add(order.getPrice());
         }
-        for (Order sellOrder : orderBook.getSellQueue()) {
-            allOrdersPrices.add(sellOrder.getPrice());
-        }
+    }
+    
+    private int setIndicativeOpeningPrice(LinkedList<Integer> allOrdersPrices) {
         int bestAuctionPrice = findBestAuctionPrice(allOrdersPrices);
-        if (bestAuctionPrice == Integer.MAX_VALUE){
+        if (bestAuctionPrice == Integer.MAX_VALUE) {
             bestAuctionPrice = 0;
         }
         indicativeOpeningPrice = bestAuctionPrice;
