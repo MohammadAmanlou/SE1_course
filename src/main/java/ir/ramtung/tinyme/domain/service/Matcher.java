@@ -69,7 +69,6 @@ public class Matcher {
         }
     }
     
-
     private void rollbackBuyTrades(Order newOrder, LinkedList<Trade> trades) {
         assert newOrder.getSide() == Side.BUY;
         newOrder.getBroker().increaseCreditBy(trades.stream().mapToLong(Trade::getTradedValue).sum());
@@ -91,7 +90,6 @@ public class Matcher {
             newOrder.getSecurity().getOrderBook().restoreBuyOrder(it.previous().getBuy());
         }
     }
-
 
     public MatchResult auctionAddToQueue(Order order) {
         MatchResult creditResult = checkBuyerCreditIfNeeded(order);
@@ -191,49 +189,48 @@ public class Matcher {
         }
     }
     
-
-    public MatchResult auctionMatch(Order newOrder , int indicativeOpeningPrice) {
+    public MatchResult auctionMatch(Order newOrder, int indicativeOpeningPrice) {
         OrderBook orderBook = newOrder.getSecurity().getOrderBook();
         LinkedList<Trade> trades = new LinkedList<>();
+        processAuctionOrderBook(newOrder, orderBook, trades, indicativeOpeningPrice);
+        return finalizeAuctionMatch(newOrder, trades);
+    }
+    
+    private void processAuctionOrderBook(Order newOrder, OrderBook orderBook, LinkedList<Trade> trades, int indicativeOpeningPrice) {
         while (orderBook.hasOrderOfType(newOrder.getSide().opposite()) && newOrder.getQuantity() > 0) {
             Order matchingOrder = orderBook.matchWithFirst(newOrder);
-            if (matchingOrder == null)
-                break;
-
-            Trade trade = new Trade(newOrder.getSecurity(), indicativeOpeningPrice, Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
-            trade.decreaseBuyersCredit();
-            trade.increaseSellersCredit();
-            if(matchingOrder.getSide() == Side.BUY){
-                matchingOrder.getBroker().increaseCreditBy(trade.getQuantity()*matchingOrder.getPrice());
-            }
-            else{
-                newOrder.getBroker().increaseCreditBy(trade.getQuantity()*newOrder.getPrice());
-            }
+            if (matchingOrder == null) break;
+    
+            Trade trade = createAuctionTrade(newOrder, matchingOrder, indicativeOpeningPrice);
             trades.add(trade);
-
-            if (newOrder.getQuantity() >= matchingOrder.getQuantity()) {
-                newOrder.decreaseQuantity(matchingOrder.getQuantity());
-                orderBook.removeFirst(matchingOrder.getSide());
-                if (matchingOrder instanceof IcebergOrder icebergOrder) {
-                    icebergOrder.decreaseQuantity(matchingOrder.getQuantity());
-                    icebergOrder.replenish();
-                    if (icebergOrder.getQuantity() > 0)
-                        orderBook.enqueue(icebergOrder);
-                }
-            } 
-            else {
-                matchingOrder.decreaseQuantity(newOrder.getQuantity());
-                newOrder.makeQuantityZero();
-            }
-        }
-        if (matchBasedOnMinimumExecutionQuantity(newOrder, trades)){
-            return MatchResult.executed(newOrder, trades);
-        }  
-        else {
-            return MatchResult.notEnoughQuantitiesMatched();  
+    
+            updateOrderQuantities(newOrder, orderBook, matchingOrder);
         }
     }
-
+    
+    private Trade createAuctionTrade(Order newOrder, Order matchingOrder, int indicativeOpeningPrice) {
+        Trade trade = new Trade(newOrder.getSecurity(), indicativeOpeningPrice, Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
+        trade.decreaseBuyersCredit();
+        trade.increaseSellersCredit();
+        adjustCredits(newOrder, matchingOrder, trade);
+        return trade;
+    }
+    
+    private void adjustCredits(Order newOrder, Order matchingOrder, Trade trade) {
+        if (matchingOrder.getSide() == Side.BUY) {
+            matchingOrder.getBroker().increaseCreditBy(trade.getQuantity() * matchingOrder.getPrice());
+        } else {
+            newOrder.getBroker().increaseCreditBy(trade.getQuantity() * newOrder.getPrice());
+        }
+    }
+    
+    private MatchResult finalizeAuctionMatch(Order newOrder, LinkedList<Trade> trades) {
+        if (matchBasedOnMinimumExecutionQuantity(newOrder, trades)) {
+            return MatchResult.executed(newOrder, trades);
+        } else {
+            return MatchResult.notEnoughQuantitiesMatched();
+        }
+    }
 
     private boolean matchBasedOnMinimumExecutionQuantity(Order newOrder, LinkedList<Trade> trades) {
         int sumOfTradeQuantities = calculateSumOfTradeQuantities(trades);
