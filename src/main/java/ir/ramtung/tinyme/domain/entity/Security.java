@@ -391,11 +391,11 @@ public class Security {
         if (allOrdersPrices.size() == 0){
             return 0;
         }
-        int min = Collections.min(allOrdersPrices);
-        int max = Collections.max(allOrdersPrices);
+        int minPrice = Collections.min(allOrdersPrices);
+        int maxPrice = Collections.max(allOrdersPrices);
         int maxQuantityTraded = 0;
         LinkedList<Integer> bestOpenPrices = new LinkedList<>();
-        for ( int i = min ; i <= max ; i++){
+        for ( int i = minPrice ; i <= maxPrice ; i++){
             int overallQuantityTraded = findOverallQuantityTraded(i);
             if(overallQuantityTraded > maxQuantityTraded){
                 maxQuantityTraded = overallQuantityTraded;
