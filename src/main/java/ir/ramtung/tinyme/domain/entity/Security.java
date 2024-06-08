@@ -327,19 +327,29 @@ public class Security {
         return sumQuantity;
     }
 
-    private int findOverallQuantityTraded(int selectedOpenPrice ){
+    private LinkedList <Order> findBuyOrdersToTrade(int selectedOpenPrice){
         LinkedList <Order> selectedBuyOrders = new LinkedList<>();
         for (Order order : orderBook.getBuyQueue()){
             if(order.getPrice() >= selectedOpenPrice){
                 selectedBuyOrders.add(order);
             }
         }
+        return selectedBuyOrders;
+    }
+
+    private LinkedList <Order> findSellOrdersToTrade(int selectedOpenPrice){
         LinkedList <Order> selectedSellOrders = new LinkedList<>();
         for (Order order : orderBook.getSellQueue()){
             if(order.getPrice() <= selectedOpenPrice){
                 selectedSellOrders.add(order);
             }
         }
+        return selectedSellOrders;
+    }
+
+    private int findOverallQuantityTraded(int selectedOpenPrice ){
+        LinkedList <Order> selectedBuyOrders = findBuyOrdersToTrade(selectedOpenPrice);
+        LinkedList <Order> selectedSellOrders = findSellOrdersToTrade(selectedOpenPrice);
         int sumQuantityInSellQueue = getTotalQuantityInOrderList(selectedSellOrders);
         int sumQuantityInBuyQueue = getTotalQuantityInOrderList(selectedBuyOrders);
         return Math.min(sumQuantityInSellQueue , sumQuantityInBuyQueue);
