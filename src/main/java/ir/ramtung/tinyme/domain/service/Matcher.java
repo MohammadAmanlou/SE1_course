@@ -9,7 +9,6 @@ import java.util.ListIterator;
 @Service
 public class Matcher {
     
-    
     public MatchResult match(Order newOrder) {
         OrderBook orderBook = newOrder.getSecurity().getOrderBook();
         LinkedList<Trade> trades = new LinkedList<>();

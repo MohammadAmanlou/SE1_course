@@ -44,7 +44,7 @@ public class Security {
                         orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity())) {
             return false;
         }
-        else{
+        else {
             return true;
         }
     }
@@ -387,12 +387,7 @@ public class Security {
         return minElement;
     }
 
-    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices){
-        if (allOrdersPrices.size() == 0){
-            return 0;
-        }
-        int minPrice = Collections.min(allOrdersPrices);
-        int maxPrice = Collections.max(allOrdersPrices);
+    private LinkedList<Integer> findCandidatePrices(int minPrice, int maxPrice){
         int maxQuantityTraded = 0;
         LinkedList<Integer> bestOpenPrices = new LinkedList<>();
         for ( int i = minPrice ; i <= maxPrice ; i++){
@@ -407,7 +402,17 @@ public class Security {
             }
         }
         highestQuantity = maxQuantityTraded;
-        return findClosestToLastTradePrice(bestOpenPrices );
+        return bestOpenPrices;
+    }
+
+    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices){
+        if (allOrdersPrices.size() != 0){
+            int minPrice = Collections.min(allOrdersPrices);
+            int maxPrice = Collections.max(allOrdersPrices);
+            LinkedList<Integer> bestOpenPrices = findCandidatePrices(minPrice, maxPrice);
+            return findClosestToLastTradePrice(bestOpenPrices );
+        }
+        return 0;
     }
 
     public int updateIndicativeOpeningPrice( ){
