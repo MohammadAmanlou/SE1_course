@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.util.LinkedList;
 import java.util.List;
 
-
 @Service
 public class ValidateRq {
     EnterOrderRq request;
@@ -74,69 +73,37 @@ public class ValidateRq {
             throw new InvalidRequestException(errors);
     }
 
-    private void validateInvalidUpdatePeakSize(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if ((order instanceof IcebergOrder) && updateOrderRq.getPeakSize() == 0)
-            throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
+    private ValidationHandler createUpdateValidationChain(Order order, OrderBook orderBook) {
+        ValidationHandler validateInvalidUpdatePeakSizeHandler = new ValidateInvalidUpdatePeakSizeHandler(order);
+        ValidationHandler validateNonIcebergHavingPeakSizeHandler = new ValidateNonIcebergHavingPeakSizeHandler(order);
+        ValidationHandler validateUpdateActiveStopLimitHandler = new ValidateUpdateActiveStopLimitHandler(order, orderBook);
+        ValidationHandler validateUpdateStopPriceForNonStopLimitHandler = new ValidateUpdateStopPriceForNonStopLimitHandler(order);
+        ValidationHandler validateZeroStopPriceForStopLimitHandler = new ValidateZeroStopPriceForStopLimitHandler(order);
+        ValidationHandler validateStopLimitHaveMEQHandler = new ValidateStopLimitHaveMEQHandler(order);
+        ValidationHandler validateStopLimitBeIcebergHandler = new ValidateStopLimitBeIcebergHandler(order);
+        ValidationHandler validateUpdateMEQHandler = new ValidateUpdateMEQHandler(order);
+
+        validateInvalidUpdatePeakSizeHandler.setNext(validateNonIcebergHavingPeakSizeHandler);
+        validateNonIcebergHavingPeakSizeHandler.setNext(validateUpdateActiveStopLimitHandler);
+        validateUpdateActiveStopLimitHandler.setNext(validateUpdateStopPriceForNonStopLimitHandler);
+        validateUpdateStopPriceForNonStopLimitHandler.setNext(validateZeroStopPriceForStopLimitHandler);
+        validateZeroStopPriceForStopLimitHandler.setNext(validateStopLimitHaveMEQHandler);
+        validateStopLimitHaveMEQHandler.setNext(validateStopLimitBeIcebergHandler);
+        validateStopLimitBeIcebergHandler.setNext(validateUpdateMEQHandler);
+
+        return validateInvalidUpdatePeakSizeHandler; // Return the first handler in the update chain
     }
 
-    private void validateNonIcebergHavingPeakSize(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
-            throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
-    }
+    public void validateUpdateOrderRq(Order order, EnterOrderRq updateOrderRq, OrderBook orderBook) throws InvalidRequestException {
+        try {
+            ValidationHandler updateValidationChain = createUpdateValidationChain(order, orderBook);
+            updateValidationChain.handle(updateOrderRq, errors);
 
-    private void validatePeakSize(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        validateInvalidUpdatePeakSize(order, updateOrderRq);
-        validateNonIcebergHavingPeakSize(order, updateOrderRq);
-    }
-
-    private void validateUpdateActiveStopLimit(Order order, OrderBook orderBook, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if ((order instanceof StopLimitOrder) && (orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId()) != null)){ 
-            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_THE_STOP_LIMIT_ORDER_IS_ACTIVE);
+            if (!errors.isEmpty()) {
+                throw new InvalidRequestException(errors);
+            }
+        } catch (InvalidRequestException ex) {
+            throw ex;
         }
     }
-
-    private void validateUpdateStopPriceForNonStopLimit(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if (!(order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() > 0){
-            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
-        }
-    }
-
-    private void validateZeroStopPriceForStopLimit(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if ((order instanceof StopLimitOrder) && updateOrderRq.getStopPrice() == 0){
-            throw new InvalidRequestException(Message.UPDATING_REJECTED_BECAUSE_IT_IS_NOT_STOP_LIMIT_ORDER);
-        }
-    }
-
-    private void validateStopLimitHaveMEQ(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if ((order instanceof StopLimitOrder) && (updateOrderRq.getMinimumExecutionQuantity() != 0) && (order.getMinimumExecutionQuantity() == 0)){
-            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_MEQ);
-        }
-    }
-
-    private void validateStopLimitBeIceberg(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if ((order instanceof StopLimitOrder) && (updateOrderRq.getPeakSize() != 0) ){
-            throw new InvalidRequestException(Message.STOP_LIMIT_ORDER_CANT_BE_ICEBERG);
-        }
-    }
-
-    private void validateUpdateStopLimit(Order order, OrderBook orderBook, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        validateUpdateActiveStopLimit(order, orderBook, updateOrderRq);
-        validateUpdateStopPriceForNonStopLimit(order, updateOrderRq);
-        validateZeroStopPriceForStopLimit(order, updateOrderRq);
-        validateStopLimitHaveMEQ(order, updateOrderRq);
-        validateStopLimitBeIceberg(order, updateOrderRq);
-    }
-
-    private void validateUpdateMEQ(Order order, EnterOrderRq updateOrderRq) throws InvalidRequestException{
-        if (order.getMinimumExecutionQuantity() != updateOrderRq.getMinimumExecutionQuantity())
-            throw new InvalidRequestException(Message.CAN_NOT_UPDATE_ORDER_MINIMUM_EXECUTION_QUANTITY);
-    }
-
-    public void validateUpdateOrderRq(Order order, EnterOrderRq updateOrderRq, OrderBook orderBook) throws InvalidRequestException{
-        validatePeakSize(order, updateOrderRq);
-        validateUpdateStopLimit(order, orderBook, updateOrderRq);
-        validateUpdateMEQ(order, updateOrderRq);
-    }
-
-
 }
