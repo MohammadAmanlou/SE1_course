@@ -355,11 +355,15 @@ public class Security {
         return Math.min(sumQuantityInSellQueue , sumQuantityInBuyQueue);
     }
 
+    private int findDistanceToLastTradePrice(int price){
+        return Math.abs(price - (int)orderBook.getLastTradePrice());
+    }
+
     private int findClosestToLastTradePrice(LinkedList<Integer> openPrices ){
         int minDistance = Integer.MAX_VALUE;
         int minElement = Integer.MAX_VALUE;
         for (int price : openPrices){
-            int distance = Math.abs(price - (int)orderBook.getLastTradePrice());
+            int distance = findDistanceToLastTradePrice(price);
             if(distance < minDistance){
                 minDistance = distance;
                 minElement = price;
