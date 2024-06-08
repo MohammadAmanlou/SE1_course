@@ -383,7 +383,6 @@ public class Security {
             int distance = findDistanceToLastTradePrice(price);
             minElement = updateMinElement(distance, minDistance, price, minElement);
             minDistance = updateMinDistance(distance, minDistance);
-            
         }
         return minElement;
     }
@@ -392,7 +391,6 @@ public class Security {
         if (allOrdersPrices.size() == 0){
             return 0;
         }
-        System.out.println(allOrdersPrices);
         int min = Collections.min(allOrdersPrices);
         int max = Collections.max(allOrdersPrices);
         int maxQuantityTraded = 0;
