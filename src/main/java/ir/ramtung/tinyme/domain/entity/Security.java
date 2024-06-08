@@ -387,18 +387,32 @@ public class Security {
         return minElement;
     }
 
-    private LinkedList<Integer> findCandidatePrices(int minPrice, int maxPrice){
+    private LinkedList<Integer> findCandidatePrices(int minPrice, int maxPrice) {
+        List<PriceQuantity> priceQuantities = calculatePriceQuantities(minPrice, maxPrice);
+        return getBestOpenPrices(priceQuantities);
+    }
+    
+    private List<PriceQuantity> calculatePriceQuantities(int minPrice, int maxPrice) {
+        List<PriceQuantity> priceQuantities = new ArrayList<>();
+        for (int i = minPrice; i <= maxPrice; i++) {
+            int overallQuantityTraded = findOverallQuantityTraded(i);
+            priceQuantities.add(new PriceQuantity(i, overallQuantityTraded));
+        }
+        return priceQuantities;
+    }
+    
+    private LinkedList<Integer> getBestOpenPrices(List<PriceQuantity> priceQuantities) {
         int maxQuantityTraded = 0;
         LinkedList<Integer> bestOpenPrices = new LinkedList<>();
-        for ( int i = minPrice ; i <= maxPrice ; i++){
-            int overallQuantityTraded = findOverallQuantityTraded(i);
-            if(overallQuantityTraded > maxQuantityTraded){
-                maxQuantityTraded = overallQuantityTraded;
+        for (PriceQuantity pq : priceQuantities) {
+            int price = pq.getPrice();
+            int quantity = pq.getQuantity();
+            if (quantity > maxQuantityTraded) {
+                maxQuantityTraded = quantity;
                 bestOpenPrices.clear();
-                bestOpenPrices.add(i);
-            }
-            else if (overallQuantityTraded == maxQuantityTraded && overallQuantityTraded != 0 ){
-                bestOpenPrices.add(i);
+                bestOpenPrices.add(price);
+            } else if (quantity == maxQuantityTraded && quantity != 0) {
+                bestOpenPrices.add(price);
             }
         }
         highestQuantity = maxQuantityTraded;
