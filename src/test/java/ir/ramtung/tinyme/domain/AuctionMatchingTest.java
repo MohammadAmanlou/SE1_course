@@ -2,15 +2,12 @@ package ir.ramtung.tinyme.domain;
 
 import ir.ramtung.tinyme.config.MockedJMSTestConfig;
 import ir.ramtung.tinyme.domain.entity.*;
-import ir.ramtung.tinyme.domain.service.Matcher;
 import ir.ramtung.tinyme.domain.service.OrderHandler;
 import ir.ramtung.tinyme.messaging.EventPublisher;
 import ir.ramtung.tinyme.messaging.Message;
-import ir.ramtung.tinyme.messaging.TradeDTO;
 import ir.ramtung.tinyme.messaging.event.OpeningPriceEvent;
 import ir.ramtung.tinyme.messaging.event.OrderAcceptedEvent;
 import ir.ramtung.tinyme.messaging.event.OrderActivatedEvent;
-import ir.ramtung.tinyme.messaging.event.OrderExecutedEvent;
 import ir.ramtung.tinyme.messaging.event.OrderRejectedEvent;
 import ir.ramtung.tinyme.messaging.event.OrderUpdatedEvent;
 import ir.ramtung.tinyme.messaging.event.SecurityStateChangedEvent;
@@ -31,9 +28,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 import static ir.ramtung.tinyme.domain.entity.Side.BUY;
@@ -52,8 +47,6 @@ public class AuctionMatchingTest {
     private Shareholder shareholder;
     private OrderBook orderBook;
     private List<Order> orders;
-    @Autowired
-    private Matcher matcher;
     @Autowired
     OrderHandler orderHandler;
     @Autowired
@@ -372,7 +365,6 @@ public class AuctionMatchingTest {
         0 , 0 , 0));
         verify(eventPublisher).publish(new OrderAcceptedEvent(1, 100));
         verify(eventPublisher).publish(new OpeningPriceEvent("ABC",15490,285));
-        double lastTradePrice = orderBook.getLastTradePrice();
         int openingPrice = security.updateIndicativeOpeningPrice();
         assertThat(openingPrice).isEqualTo(15490);
         orderHandler.handleDeleteOrder(new DeleteOrderRq(2,"ABC",Side.BUY,100));

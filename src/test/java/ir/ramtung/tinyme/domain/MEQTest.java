@@ -183,7 +183,6 @@ public class MEQTest {
     @Test
     void new_sell_order_matched_completely_with_one_trade_fail() {
         Order matchingBuyOrder = new Order(100, security, Side.BUY, 1000, 15500, broker1, shareholder,0);
-        Order incomingSellOrder = new Order(200, security, Side.SELL, 300, 15450, broker2, shareholder,0);
         security.getOrderBook().enqueue(matchingBuyOrder);
 
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(), Side.SELL, 300, 15450, 2, shareholder.getShareholderId(), 0, 400));
