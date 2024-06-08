@@ -18,7 +18,6 @@ import ir.ramtung.tinyme.repository.ShareholderRepository;
 
 import org.springframework.stereotype.Service;
 
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +30,8 @@ public class OrderHandler {
     EventPublisher eventPublisher;
     Matcher matcher;
 
-    public OrderHandler(SecurityRepository securityRepository, BrokerRepository brokerRepository, ShareholderRepository shareholderRepository, EventPublisher eventPublisher, Matcher matcher) {
+    public OrderHandler(SecurityRepository securityRepository, BrokerRepository brokerRepository,
+            ShareholderRepository shareholderRepository, EventPublisher eventPublisher, Matcher matcher) {
         this.securityRepository = securityRepository;
         this.brokerRepository = brokerRepository;
         this.shareholderRepository = shareholderRepository;
@@ -39,8 +39,9 @@ public class OrderHandler {
         this.matcher = matcher;
     }
 
-    private boolean isDeleteStopLimitInAuction(Security security , DeleteOrderRq deleteOrderRq){
-        return security.getMatchingState() == MatchingState.AUCTION && security.getOrderBook().findInActiveByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId()) != null ; 
+    private boolean isDeleteStopLimitInAuction(Security security, DeleteOrderRq deleteOrderRq) {
+        return security.getMatchingState() == MatchingState.AUCTION && security.getOrderBook()
+                .findInActiveByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId()) != null;
     }
 
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
@@ -48,13 +49,12 @@ public class OrderHandler {
             validateDeleteOrderRq(deleteOrderRq);
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
             security.deleteOrder(deleteOrderRq);
-            if(isDeleteStopLimitInAuction(security, deleteOrderRq)){
+            if (isDeleteStopLimitInAuction(security, deleteOrderRq)) {
                 publishOrderRejectedEvent(deleteOrderRq, List.of(Message.STOPLIMIT_ORDER_IN_AUCTION_MODE_CANT_REMOVE));
-            }
-            else{
+            } else {
                 publishOrderDeletedEvent(deleteOrderRq);
             }
-            if(security.getMatchingState() == MatchingState.AUCTION){
+            if (security.getMatchingState() == MatchingState.AUCTION) {
                 security.updateIndicativeOpeningPrice();
                 publishOpeningPriceEvent(security);
             }
@@ -76,28 +76,32 @@ public class OrderHandler {
         Security security = securityRepository.findSecurityByIsin(changeMatchStateRq.getSecurityIsin());
         MatchingState matchingState = changeMatchStateRq.getState();
         MatchResult matchResult = security.ChangeMatchStateRq(matchingState, matcher);
-        
+
         processMatchStateChange(security, matchResult);
     }
 
     private void publishEvent(Event event) {
         eventPublisher.publish(event);
     }
-    
+
     private void publishNotEnoughCredit(EnterOrderRq enterOrderRq) {
-        publishEvent(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
+        publishEvent(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
+                List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
     }
-    
+
     private void publishNotEnoughPositions(EnterOrderRq enterOrderRq) {
-        publishEvent(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+        publishEvent(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
+                List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
     }
 
     private void publishOpeningPriceEvent(Security security) {
-        publishEvent(new OpeningPriceEvent(security.getIsin(), security.getIndicativeOpeningPrice(), security.getHighestQuantity()));
+        publishEvent(new OpeningPriceEvent(security.getIsin(), security.getIndicativeOpeningPrice(),
+                security.getHighestQuantity()));
     }
 
     private void publishOpeningPriceEvent(Security security, EnterOrderRq enterOrderRq) {
-        publishEvent(new OpeningPriceEvent(enterOrderRq.getSecurityIsin(), security.getIndicativeOpeningPrice(), security.getHighestQuantity()));
+        publishEvent(new OpeningPriceEvent(enterOrderRq.getSecurityIsin(), security.getIndicativeOpeningPrice(),
+                security.getHighestQuantity()));
     }
 
     private void publishOrderAcceptedEvent(EnterOrderRq enterOrderRq) {
@@ -117,26 +121,26 @@ public class OrderHandler {
     }
 
     private void publishOrderExecutedEvent(EnterOrderRq enterOrderRq, MatchResult matchResult) {
-        publishEvent(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), 
-            matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+        publishEvent(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
+                matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
     }
 
     private void publishOrderExecutedEvent(EnterOrderRq enterOrderRq, Order order, MatchResult matchResult) {
         if (enterOrderRq != null) {
-            publishEvent(new OrderExecutedEvent(enterOrderRq.getRequestId(), order.getOrderId(), 
-            matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+            publishEvent(new OrderExecutedEvent(enterOrderRq.getRequestId(), order.getOrderId(),
+                    matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+        } else {
+            publishEvent(new OrderExecutedEvent(order.getRequestId(), order.getOrderId(),
+                    matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
         }
-        else {
-            publishEvent(new OrderExecutedEvent(order.getRequestId(), order.getOrderId(), 
-            matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
-        }
-        
+
     }
-    
+
     private void publishOrderRejectedEvent(DeleteOrderRq deleteOrderRq, List<String> reasons) {
-        eventPublisher.publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), reasons));
+        eventPublisher
+                .publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), reasons));
     }
-    
+
     private void publishOrderRejectedEvent(EnterOrderRq enterOrderRq, List<String> reasons) {
         eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), reasons));
     }
@@ -146,7 +150,8 @@ public class OrderHandler {
     }
 
     private void publishTradeEvent(Security security, Trade trade) {
-        publishEvent(new TradeEvent(security.getIsin(), trade.getPrice(), trade.getQuantity(), trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
+        publishEvent(new TradeEvent(security.getIsin(), trade.getPrice(), trade.getQuantity(),
+                trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
     }
 
     private void publishSecurityStateChangedEvent(Security security, MatchingState matchingState) {
@@ -169,14 +174,15 @@ public class OrderHandler {
 
     private void publishStopPriceOutcome(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && enterOrderRq.getStopPrice() > 0) {
-            publishActivations(matchResult , enterOrderRq);
+            publishActivations(matchResult, enterOrderRq);
         }
-        publishExecutions(matchResult , enterOrderRq);
+        publishExecutions(matchResult, enterOrderRq);
     }
 
     private void publishExecutions(MatchResult matchResult, EnterOrderRq enterOrderRq) {
-        if (!matchResult.trades().isEmpty() && 
-            securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin()).getMatchingState() == MatchingState.CONTINUOUS) {
+        if (!matchResult.trades().isEmpty() &&
+                securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin())
+                        .getMatchingState() == MatchingState.CONTINUOUS) {
             publishOrderExecutedEvent(enterOrderRq, matchResult);
         }
     }
@@ -188,13 +194,14 @@ public class OrderHandler {
             publishOrderActivatedEvent(order, enterOrderRq);
         } else {
             Trade lastTrade = matchResult.trades().getLast();
-            Order matchedOrder = currentSecurity.getOrderBook().findByOrderId(lastTrade.getBuy().getSide(), lastTrade.getBuy().getOrderId());
+            Order matchedOrder = currentSecurity.getOrderBook().findByOrderId(lastTrade.getBuy().getSide(),
+                    lastTrade.getBuy().getOrderId());
             if (matchedOrder != null) {
                 publishOrderActivatedEvent(matchedOrder, enterOrderRq);
             }
         }
     }
-    
+
     private void handleOrder(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER) {
             handleNewOrder(matchResult, enterOrderRq);
@@ -202,7 +209,7 @@ public class OrderHandler {
             handleOrderUpdate(matchResult, enterOrderRq);
         }
     }
-    
+
     private void handleNewOrder(MatchResult matchResult, EnterOrderRq enterOrderRq) {
         if (matchResult.outcome() == MatchingOutcome.ORDER_ENQUEUED_IN_AUCTION_MODE) {
             Security currentSecurity = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
@@ -219,15 +226,16 @@ public class OrderHandler {
             publishOpeningPriceEvent(currentSecurity, enterOrderRq);
         }
     }
-    
-    private void activateStopLimitOrders(Security security , EnterOrderRq enterOrderRq){
-        if(security.getMatchingState() == MatchingState.CONTINUOUS){
-            execInactiveStopLimitOrders(security , enterOrderRq);
+
+    private void activateStopLimitOrders(Security security, EnterOrderRq enterOrderRq) {
+        if (security.getMatchingState() == MatchingState.CONTINUOUS) {
+            execInactiveStopLimitOrders(security, enterOrderRq);
         }
     }
 
-    private void validateOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException{
-        ValidateRq validateRq = new ValidateRq(enterOrderRq, securityRepository, brokerRepository, shareholderRepository);
+    private void validateOrder(EnterOrderRq enterOrderRq) throws InvalidRequestException {
+        ValidateRq validateRq = new ValidateRq(enterOrderRq, securityRepository, brokerRepository,
+                shareholderRepository);
         validateRq.validateEnterOrderRq(enterOrderRq);
     }
 
@@ -235,17 +243,17 @@ public class OrderHandler {
         Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
         Broker broker = brokerRepository.findBrokerById(enterOrderRq.getBrokerId());
         Shareholder shareholder = shareholderRepository.findShareholderById(enterOrderRq.getShareholderId());
-    
+
         MatchResult matchResult;
         if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
             matchResult = security.newOrder(enterOrderRq, broker, shareholder, matcher);
         else
             matchResult = security.updateOrder(enterOrderRq, matcher);
-    
+
         publishEnterOrderRqOutcome(matchResult, enterOrderRq);
         activateStopLimitOrders(security, enterOrderRq);
     }
-    
+
     private void execInactiveStopLimitOrders(Security security, EnterOrderRq enterOrderRq) {
         while (true) {
             Order executableOrder = security.getOrderBook().dequeueNextStopLimitOrder(enterOrderRq.getSide());
@@ -255,7 +263,7 @@ public class OrderHandler {
             processExecutableOrder(executableOrder, enterOrderRq);
         }
     }
-    
+
     private void execInactiveStopLimitOrders(Security security) {
         while (true) {
             Order executableBuyOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.BUY);
@@ -271,7 +279,7 @@ public class OrderHandler {
             }
         }
     }
-    
+
     private void processExecutableOrder(Order executableOrder, EnterOrderRq enterOrderRq) {
         executableOrder.getBroker().increaseCreditBy(executableOrder.getValue());
         MatchResult matchResult = matcher.execute(executableOrder);
@@ -282,7 +290,7 @@ public class OrderHandler {
             publishOrderExecutedEvent(enterOrderRq, executableOrder, matchResult);
         }
     }
-    
+
     private void execInactiveStopLimitOrdersAuction(Security security) {
         while (true) {
             Order executableBuyOrder = security.getOrderBook().dequeueNextStopLimitOrder(Side.BUY);
@@ -294,14 +302,15 @@ public class OrderHandler {
             processAuctionOrder(executableSellOrder, Side.SELL);
         }
     }
-    
+
     private void processAuctionOrder(Order executableOrder, Side side) {
         if (executableOrder != null) {
             if (side == Side.BUY) {
                 executableOrder.getBroker().increaseCreditBy(executableOrder.getValue());
             }
             MatchResult matchResult = matcher.auctionAddToQueue(executableOrder);
-            if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED && executableOrder.getStopPrice() > 0) {
+            if (matchResult.outcome() != MatchingOutcome.INACTIVE_ORDER_ENQUEUED
+                    && executableOrder.getStopPrice() > 0) {
                 publishOrderActivatedEvent(executableOrder);
             }
         }

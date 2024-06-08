@@ -11,16 +11,16 @@ import lombok.ToString;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class ChangeMatchStateRq extends Request{
+public class ChangeMatchStateRq extends Request {
 
     private MatchingState state;
 
-    private ChangeMatchStateRq(String securityIsin , MatchingState matchingState ){
+    private ChangeMatchStateRq(String securityIsin, MatchingState matchingState) {
         this.securityIsin = securityIsin;
         this.state = matchingState;
     }
 
-    public static ChangeMatchStateRq changeMatchStateRq(String securityIsin , MatchingState matchingState){
+    public static ChangeMatchStateRq changeMatchStateRq(String securityIsin, MatchingState matchingState) {
         return new ChangeMatchStateRq(securityIsin, matchingState);
     }
 }

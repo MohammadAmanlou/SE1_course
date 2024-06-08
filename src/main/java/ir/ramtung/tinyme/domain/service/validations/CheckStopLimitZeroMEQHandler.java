@@ -14,4 +14,3 @@ class CheckStopLimitZeroMEQHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

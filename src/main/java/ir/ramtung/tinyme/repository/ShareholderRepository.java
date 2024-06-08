@@ -8,9 +8,11 @@ import java.util.HashMap;
 @Component
 public class ShareholderRepository {
     private final HashMap<Long, Shareholder> shareholderById = new HashMap<>();
+
     public Shareholder findShareholderById(long shareholderId) {
         return shareholderById.get(shareholderId);
     }
+
     public void addShareholder(Shareholder shareholder) {
         shareholderById.put(shareholder.getShareholderId(), shareholder);
     }

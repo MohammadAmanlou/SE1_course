@@ -18,5 +18,4 @@ public class InvalidRequestException extends Exception {
         this.reasons = List.of(reason);
     }
 
-
 }

@@ -12,63 +12,65 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class StopLimitOrder extends Order {
-    double stopPrice ;
-    Boolean isActive ;
+    double stopPrice;
+    Boolean isActive;
 
-    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, double stopPrice, OrderStatus status) {
-        super(orderId, security, side, quantity, price, broker, shareholder, entryTime, status , 0);
+    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, LocalDateTime entryTime, double stopPrice, OrderStatus status) {
+        super(orderId, security, side, quantity, price, broker, shareholder, entryTime, status, 0);
         this.stopPrice = stopPrice;
-        this.isActive = false ; 
+        this.isActive = false;
     }
 
-    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, double stopPrice) {
+    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, LocalDateTime entryTime, double stopPrice) {
         this(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.NEW);
-        this.isActive = false ; 
+        this.isActive = false;
     }
 
-    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, double stopPrice, int minimumExecutionQuantity) {
+    public StopLimitOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, double stopPrice, int minimumExecutionQuantity) {
         super(orderId, security, side, quantity, price, broker, shareholder, minimumExecutionQuantity);
         this.stopPrice = stopPrice;
-        this.isActive = false ; 
+        this.isActive = false;
     }
 
     @Override
     public Order snapshot() {
         return createSnapshot(quantity);
     }
-    
+
     @Override
     public Order snapshotWithQuantity(int newQuantity) {
         return createSnapshot(newQuantity);
     }
-    
+
     private Order createSnapshot(int quantity) {
-        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, OrderStatus.SNAPSHOT);
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice,
+                OrderStatus.SNAPSHOT);
     }
 
     @Override
     public void queue() {
         if (isActive)
             super.queue();
-        else 
-            return ;
+        else
+            return;
     }
 
     @Override
     public boolean queuesBefore(Order order) {
         if (order.getSide() == Side.BUY) {
             return price > stopPrice;
-        } 
-        else {
+        } else {
             return price < stopPrice;
         }
     }
 
-    public boolean checkActivation(double lastTradePrice){
-        if(side == Side.SELL){
+    public boolean checkActivation(double lastTradePrice) {
+        if (side == Side.SELL) {
             return lastTradePrice <= stopPrice;
-        }
-        else{
+        } else {
             return lastTradePrice >= stopPrice;
         }
     }

@@ -23,4 +23,3 @@ public class ValidateStopLimitBeIcebergHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

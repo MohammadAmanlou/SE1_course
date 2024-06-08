@@ -21,4 +21,3 @@ class ValidateBrokerHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

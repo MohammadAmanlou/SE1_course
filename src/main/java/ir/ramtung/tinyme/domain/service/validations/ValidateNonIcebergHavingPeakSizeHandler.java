@@ -22,4 +22,3 @@ public class ValidateNonIcebergHavingPeakSizeHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

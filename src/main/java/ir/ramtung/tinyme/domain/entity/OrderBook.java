@@ -13,10 +13,9 @@ import java.util.Iterator;
 public class OrderBook {
     private final LinkedList<Order> buyQueue;
     private final LinkedList<Order> sellQueue;
-    private LinkedList<Order> activeStopLimitOrders ;
-    private LinkedList<Order> inactiveBuyStopLimitOrders ;
-    private LinkedList<Order> inactiveSellStopLimitOrders ;
-
+    private LinkedList<Order> activeStopLimitOrders;
+    private LinkedList<Order> inactiveBuyStopLimitOrders;
+    private LinkedList<Order> inactiveSellStopLimitOrders;
 
     private double lastTradePrice;
 
@@ -44,7 +43,7 @@ public class OrderBook {
         List<Order> queue = getQueue(order.getSide());
         enqueueOrder(order, queue);
     }
-    
+
     public void stopLimitOrderEnqueue(StopLimitOrder stopLimitOrder) {
         List<Order> queue = getInactiveStopLimitOrdersQueue(stopLimitOrder.getSide());
         enqueueOrder(stopLimitOrder, queue);
@@ -53,19 +52,17 @@ public class OrderBook {
     public void activeStopLimitOrderEnqueue(Order stopLimitOrder) {
         enqueueOrder(stopLimitOrder, activeStopLimitOrders);
     }
-    
 
-    public LinkedList<Order> getQueue(Side side) { //changed
+    public LinkedList<Order> getQueue(Side side) { // changed
         return side == Side.BUY ? buyQueue : sellQueue;
     }
 
-    private LinkedList<Order> getInactiveStopLimitOrdersQueue(Side side){
-        if (side == Side.BUY){
+    private LinkedList<Order> getInactiveStopLimitOrdersQueue(Side side) {
+        if (side == Side.BUY) {
             return inactiveBuyStopLimitOrders;
-        }
-        else {
+        } else {
             return inactiveSellStopLimitOrders;
-        } 
+        }
     }
 
     public Order findByOrderId(Side side, long orderId) {
@@ -77,7 +74,7 @@ public class OrderBook {
         return null;
     }
 
-    public Order findInActiveByOrderId(Side side, long orderId){
+    public Order findInActiveByOrderId(Side side, long orderId) {
         var queue = getInactiveStopLimitOrdersQueue(side);
         for (Order order : queue) {
             if (order.getOrderId() == orderId)
@@ -86,11 +83,11 @@ public class OrderBook {
         return null;
     }
 
-    public Order dequeueNextStopLimitOrder(Side side){
+    public Order dequeueNextStopLimitOrder(Side side) {
         ListIterator<Order> it = getInactiveStopLimitOrdersQueue(side).listIterator();
-        if(it.hasNext()){
+        if (it.hasNext()) {
             Order order = it.next();
-            if(((StopLimitOrder)order).checkActivation(lastTradePrice) ){
+            if (((StopLimitOrder) order).checkActivation(lastTradePrice)) {
                 it.remove();
                 return order;
             }
@@ -160,25 +157,26 @@ public class OrderBook {
                 .mapToInt(Order::getTotalQuantity)
                 .sum();
     }
-    
+
     public int totalSellQuantityByShareholder(Shareholder shareholder) {
         return totalQuantityByShareholder(sellQueue, shareholder) +
-               totalQuantityByShareholder(inactiveSellStopLimitOrders, shareholder);
+                totalQuantityByShareholder(inactiveSellStopLimitOrders, shareholder);
     }
-    
 
     public void setLastTradePrice(double lastTradePrice) {
         this.lastTradePrice = lastTradePrice;
     }
 
     private boolean shouldActivateSellOrder(Order order) {
-        return (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL && (order instanceof StopLimitOrder));
+        return (order.getStopPrice() <= lastTradePrice && order.getSide() == Side.SELL
+                && (order instanceof StopLimitOrder));
     }
-    
+
     private boolean shouldActivateBuyOrder(Order order) {
-        return (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY && (order instanceof StopLimitOrder));
+        return (order.getStopPrice() >= lastTradePrice && order.getSide() == Side.BUY
+                && (order instanceof StopLimitOrder));
     }
-    
+
     public void activateSellStopLimitOrders() {
         Iterator<Order> iterator = inactiveSellStopLimitOrders.iterator();
         while (iterator.hasNext()) {
@@ -190,7 +188,7 @@ public class OrderBook {
             }
         }
     }
-    
+
     public void activateBuyStopLimitOrders() {
         Iterator<Order> iterator = inactiveBuyStopLimitOrders.iterator();
         while (iterator.hasNext()) {
@@ -203,18 +201,17 @@ public class OrderBook {
             }
         }
     }
-    
 
     public List<StopLimitOrder> activateStopLimitOrders() {
         List<StopLimitOrder> activatedOrders = new ArrayList<>();
-        if(inactiveSellStopLimitOrders.size() > 0 )
+        if (inactiveSellStopLimitOrders.size() > 0)
             activateSellStopLimitOrders();
-        if(inactiveBuyStopLimitOrders.size() > 0)
+        if (inactiveBuyStopLimitOrders.size() > 0)
             activateBuyStopLimitOrders();
         return activatedOrders;
     }
 
-    public void enqueueByQueue(Order order , List<Order> queue , Predicate<Order> condition){
+    public void enqueueByQueue(Order order, List<Order> queue, Predicate<Order> condition) {
         ListIterator<Order> it = queue.listIterator();
         while (it.hasNext()) {
             Order nexOrder = it.next();
@@ -227,16 +224,16 @@ public class OrderBook {
         it.add(order);
     }
 
-    public void enqueueInactiveStopLimitOrder(Order order){
+    public void enqueueInactiveStopLimitOrder(Order order) {
         List<Order> queue = getInactiveStopLimitOrdersQueue(order.getSide());
         Predicate<Order> condition = order::inactiveOrderQueuesBefore;
         enqueueByQueue(order, queue, condition);
     }
 
-    public void enqueueActiveStopLimitOrder(Order order){
+    public void enqueueActiveStopLimitOrder(Order order) {
         List<Order> queue = getQueue(order.getSide());
         Predicate<Order> condition = order::inactiveOrderQueuesBefore;
         enqueueByQueue(order, queue, condition);
     }
-    
+
 }

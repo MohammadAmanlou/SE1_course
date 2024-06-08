@@ -28,7 +28,8 @@ public class DataLoader {
     private final ShareholderRepository shareholderRepository;
     private final SecurityRepository securityRepository;
 
-    public DataLoader(BrokerRepository brokerRepository, ShareholderRepository shareholderRepository, SecurityRepository securityRepository) {
+    public DataLoader(BrokerRepository brokerRepository, ShareholderRepository shareholderRepository,
+            SecurityRepository securityRepository) {
         this.brokerRepository = brokerRepository;
         this.shareholderRepository = shareholderRepository;
         this.securityRepository = securityRepository;
@@ -65,7 +66,7 @@ public class DataLoader {
 
     private void loadBrokers() throws Exception {
         brokerRepository.clear();
-      try (Reader reader = new FileReader(brokerCsvResource.getFile())) {
+        try (Reader reader = new FileReader(brokerCsvResource.getFile())) {
             try (CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build()) {
                 String[] line;
                 while ((line = csvReader.readNext()) != null) {
@@ -136,8 +137,9 @@ public class DataLoader {
                     Security security = securityRepository.findSecurityByIsin(line[1]);
                     Broker broker = brokerRepository.findBrokerById(Long.parseLong(line[5]));
                     Shareholder shareholder = shareholderRepository.findShareholderById(Long.parseLong(line[6]));
-//orderId,isin,side,quantity,price,brokerId,shareholderId,entryTime,peakSize,displayedQuantity, meq
-//0       1    2    3        4     5        6             7         8        9                  10
+                    // orderId,isin,side,quantity,price,brokerId,shareholderId,entryTime,peakSize,displayedQuantity,
+                    // meq
+                    // 0 1 2 3 4 5 6 7 8 9 10
                     int peakSize = Integer.parseInt(line[8]);
                     Order order;
                     if (peakSize == 0) {
@@ -220,7 +222,8 @@ public class DataLoader {
         try (PrintWriter securityWriter = new PrintWriter(new FileWriter(securityCsvResource.getFile()))) {
             securityWriter.println("isin,tickSize,lotSize");
             try (PrintWriter orderBookWriter = new PrintWriter(new FileWriter(orderBookCsvResource.getFile()))) {
-                orderBookWriter.println("orderId,isin,side,quantity,price,brokerId,shareholderId,entryTime,status,peakSize,displayedQuantity");
+                orderBookWriter.println(
+                        "orderId,isin,side,quantity,price,brokerId,shareholderId,entryTime,status,peakSize,displayedQuantity");
                 for (Security security : securityRepository.allSecurities()) {
                     StringJoiner joiner = new StringJoiner(",");
                     joiner.add(security.getIsin())

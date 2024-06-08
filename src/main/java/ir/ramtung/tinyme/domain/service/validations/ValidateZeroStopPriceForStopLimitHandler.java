@@ -23,4 +23,3 @@ public class ValidateZeroStopPriceForStopLimitHandler extends ValidationHandler 
         super.handle(request, errors);
     }
 }
-

@@ -27,7 +27,9 @@ public class Order {
     protected int minimumExecutionQuantity;
     protected long requestId;
 
-    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity, long requestId) {
+    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity,
+            long requestId) {
         this.orderId = orderId;
         this.security = security;
         this.side = side;
@@ -41,24 +43,32 @@ public class Order {
         this.requestId = requestId;
     }
 
-    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity) {
-        this(orderId, security, side, quantity, price, broker, shareholder, entryTime, status, minimumExecutionQuantity, 0);
+    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity) {
+        this(orderId, security, side, quantity, price, broker, shareholder, entryTime, status, minimumExecutionQuantity,
+                0);
     }
 
-    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, int minimumExecutionQuantity) {
-        this(orderId, security, side, quantity, price, broker, shareholder, entryTime, OrderStatus.NEW, minimumExecutionQuantity, 0);
+    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, LocalDateTime entryTime, int minimumExecutionQuantity) {
+        this(orderId, security, side, quantity, price, broker, shareholder, entryTime, OrderStatus.NEW,
+                minimumExecutionQuantity, 0);
     }
 
-    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, int minimumExecutionQuantity) {
-        this(orderId, security, side, quantity, price, broker, shareholder, LocalDateTime.now(), minimumExecutionQuantity);
+    public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, int minimumExecutionQuantity) {
+        this(orderId, security, side, quantity, price, broker, shareholder, LocalDateTime.now(),
+                minimumExecutionQuantity);
     }
 
     public Order snapshot() {
-        return new Order(orderId, security, side, quantity, price, broker, shareholder, entryTime, OrderStatus.SNAPSHOT, minimumExecutionQuantity);
+        return new Order(orderId, security, side, quantity, price, broker, shareholder, entryTime, OrderStatus.SNAPSHOT,
+                minimumExecutionQuantity);
     }
 
     public Order snapshotWithQuantity(int newQuantity) {
-        return new Order(orderId, security, side, newQuantity, price, broker, shareholder, entryTime, OrderStatus.SNAPSHOT, minimumExecutionQuantity);
+        return new Order(orderId, security, side, newQuantity, price, broker, shareholder, entryTime,
+                OrderStatus.SNAPSHOT, minimumExecutionQuantity);
     }
 
     public boolean matches(Order other) {
@@ -86,39 +96,44 @@ public class Order {
         }
     }
 
-    public double getStopPrice(){
+    public double getStopPrice() {
         return 0;
     }
 
     public boolean inactiveOrderQueuesBefore(Order order) {
         return order.getSide() == Side.BUY ? compareBuyOrder(order) : compareSellOrder(order);
     }
-    
+
     private boolean compareBuyOrder(Order order) {
         int entryCompareResult = entryTime.compareTo(order.getEntryTime());
-        if (getStopPrice() < order.getStopPrice()) return true;
-        if (getStopPrice() == order.getStopPrice()) return entryCompareResult < 0;
+        if (getStopPrice() < order.getStopPrice())
+            return true;
+        if (getStopPrice() == order.getStopPrice())
+            return entryCompareResult < 0;
         return false;
     }
-    
+
     private boolean compareSellOrder(Order order) {
         int entryCompareResult = entryTime.compareTo(order.getEntryTime());
-        if (getStopPrice() > order.getStopPrice()) return true;
-        if (getStopPrice() == order.getStopPrice()) return entryCompareResult < 0;
+        if (getStopPrice() > order.getStopPrice())
+            return true;
+        if (getStopPrice() == order.getStopPrice())
+            return entryCompareResult < 0;
         return false;
     }
-    
+
     public void queue() {
         status = OrderStatus.QUEUED;
     }
 
-    public void markAsNew(){
+    public void markAsNew() {
         status = OrderStatus.NEW;
     }
 
-    public void markAsUpdating(){
+    public void markAsUpdating() {
         status = OrderStatus.UPDATING;
     }
+
     public boolean isQuantityIncreased(int newQuantity) {
         return newQuantity > quantity;
     }
@@ -129,13 +144,15 @@ public class Order {
     }
 
     public long getValue() {
-        return (long)price * quantity;
+        return (long) price * quantity;
     }
 
-    public void setRequestId(long value){
+    public void setRequestId(long value) {
         requestId = value;
     }
 
-    public int getTotalQuantity() { return quantity; }
-    
+    public int getTotalQuantity() {
+        return quantity;
+    }
+
 }

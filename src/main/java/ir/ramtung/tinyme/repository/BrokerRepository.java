@@ -8,9 +8,11 @@ import java.util.HashMap;
 @Component
 public class BrokerRepository {
     private final HashMap<Long, Broker> brokerById = new HashMap<>();
+
     public Broker findBrokerById(long brokerId) {
         return brokerById.get(brokerId);
     }
+
     public void addBroker(Broker broker) {
         brokerById.put(broker.getBrokerId(), broker);
     }
@@ -18,6 +20,7 @@ public class BrokerRepository {
     public void clear() {
         brokerById.clear();
     }
+
     Iterable<? extends Broker> allBrokers() {
         return brokerById.values();
     }

@@ -8,6 +8,7 @@ import java.util.HashMap;
 @Component
 public class SecurityRepository {
     private final HashMap<String, Security> securityByIsin = new HashMap<>();
+
     public Security findSecurityByIsin(String isin) {
         return securityByIsin.get(isin);
     }

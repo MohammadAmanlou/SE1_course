@@ -22,7 +22,8 @@ public class ValidateRq {
     BrokerRepository brokerRepository;
     ShareholderRepository shareholderRepository;
 
-    public ValidateRq(EnterOrderRq request, SecurityRepository securityRepository, BrokerRepository brokerRepository, ShareholderRepository shareholderRepository) {
+    public ValidateRq(EnterOrderRq request, SecurityRepository securityRepository, BrokerRepository brokerRepository,
+            ShareholderRepository shareholderRepository) {
         this.request = request;
         this.errors = new LinkedList<>();
         this.securityRepository = securityRepository;
@@ -76,9 +77,12 @@ public class ValidateRq {
     private ValidationHandler createUpdateValidationChain(Order order, OrderBook orderBook) {
         ValidationHandler validateInvalidUpdatePeakSizeHandler = new ValidateInvalidUpdatePeakSizeHandler(order);
         ValidationHandler validateNonIcebergHavingPeakSizeHandler = new ValidateNonIcebergHavingPeakSizeHandler(order);
-        ValidationHandler validateUpdateActiveStopLimitHandler = new ValidateUpdateActiveStopLimitHandler(order, orderBook);
-        ValidationHandler validateUpdateStopPriceForNonStopLimitHandler = new ValidateUpdateStopPriceForNonStopLimitHandler(order);
-        ValidationHandler validateZeroStopPriceForStopLimitHandler = new ValidateZeroStopPriceForStopLimitHandler(order);
+        ValidationHandler validateUpdateActiveStopLimitHandler = new ValidateUpdateActiveStopLimitHandler(order,
+                orderBook);
+        ValidationHandler validateUpdateStopPriceForNonStopLimitHandler = new ValidateUpdateStopPriceForNonStopLimitHandler(
+                order);
+        ValidationHandler validateZeroStopPriceForStopLimitHandler = new ValidateZeroStopPriceForStopLimitHandler(
+                order);
         ValidationHandler validateStopLimitHaveMEQHandler = new ValidateStopLimitHaveMEQHandler(order);
         ValidationHandler validateStopLimitBeIcebergHandler = new ValidateStopLimitBeIcebergHandler(order);
         ValidationHandler validateUpdateMEQHandler = new ValidateUpdateMEQHandler(order);
@@ -94,7 +98,8 @@ public class ValidateRq {
         return validateInvalidUpdatePeakSizeHandler; // Return the first handler in the update chain
     }
 
-    public void validateUpdateOrderRq(Order order, EnterOrderRq updateOrderRq, OrderBook orderBook) throws InvalidRequestException {
+    public void validateUpdateOrderRq(Order order, EnterOrderRq updateOrderRq, OrderBook orderBook)
+            throws InvalidRequestException {
         try {
             ValidationHandler updateValidationChain = createUpdateValidationChain(order, orderBook);
             updateValidationChain.handle(updateOrderRq, errors);

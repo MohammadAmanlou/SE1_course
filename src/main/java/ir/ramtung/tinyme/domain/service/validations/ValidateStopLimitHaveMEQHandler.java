@@ -17,7 +17,8 @@ public class ValidateStopLimitHaveMEQHandler extends ValidationHandler {
 
     @Override
     public void handle(EnterOrderRq request, List<String> errors) throws InvalidRequestException {
-        if ((order instanceof StopLimitOrder) && (request.getMinimumExecutionQuantity() != 0) && (order.getMinimumExecutionQuantity() == 0)) {
+        if ((order instanceof StopLimitOrder) && (request.getMinimumExecutionQuantity() != 0)
+                && (order.getMinimumExecutionQuantity() == 0)) {
             errors.add(Message.STOP_LIMIT_ORDER_CANT_MEQ);
         }
         super.handle(request, errors);

@@ -34,4 +34,3 @@ class ValidateSecurityHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

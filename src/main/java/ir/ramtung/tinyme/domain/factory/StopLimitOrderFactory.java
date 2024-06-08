@@ -13,34 +13,48 @@ import java.time.LocalDateTime;
 public class StopLimitOrderFactory implements OrderFactory {
 
     @Override
-    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity, long requestId) {
-        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, minimumExecutionQuantity);
+    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price,
+            Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status,
+            int minimumExecutionQuantity, long requestId) {
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime,
+                minimumExecutionQuantity);
     }
 
     @Override
-    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity) {
-        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, minimumExecutionQuantity);
+    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price,
+            Broker broker, Shareholder shareholder, LocalDateTime entryTime, OrderStatus status,
+            int minimumExecutionQuantity) {
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime,
+                minimumExecutionQuantity);
     }
 
     @Override
-    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, int minimumExecutionQuantity) {
-        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, minimumExecutionQuantity);
+    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price,
+            Broker broker, Shareholder shareholder, LocalDateTime entryTime, int minimumExecutionQuantity) {
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime,
+                minimumExecutionQuantity);
     }
 
     @Override
-    public Order createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, int minimumExecutionQuantity) {
+    public Order createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker,
+            Shareholder shareholder, int minimumExecutionQuantity) {
         return new Order(orderId, security, side, quantity, price, broker, shareholder, minimumExecutionQuantity);
     }
 
-    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, double stopPrice, OrderStatus status) {
-        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice, status);
+    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price,
+            Broker broker, Shareholder shareholder, LocalDateTime entryTime, double stopPrice, OrderStatus status) {
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice,
+                status);
     }
 
-    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, LocalDateTime entryTime, double stopPrice) {
+    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price,
+            Broker broker, Shareholder shareholder, LocalDateTime entryTime, double stopPrice) {
         return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, entryTime, stopPrice);
     }
 
-    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price, Broker broker, Shareholder shareholder, double stopPrice, int minimumExecutionQuantity) {
-        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, stopPrice, minimumExecutionQuantity);
+    public StopLimitOrder createOrder(long orderId, Security security, Side side, int quantity, int price,
+            Broker broker, Shareholder shareholder, double stopPrice, int minimumExecutionQuantity) {
+        return new StopLimitOrder(orderId, security, side, quantity, price, broker, shareholder, stopPrice,
+                minimumExecutionQuantity);
     }
 }

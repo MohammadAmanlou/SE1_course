@@ -14,5 +14,3 @@ class CheckStopLimitNotIcebergHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-
-

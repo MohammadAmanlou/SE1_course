@@ -16,10 +16,10 @@ import java.time.LocalDateTime;
 @ToString(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class DeleteOrderRq extends Request{
+public class DeleteOrderRq extends Request {
     private Side side;
     private long orderId;
-    
+
     public DeleteOrderRq(long requestId, String securityIsin, Side side, long orderId) {
         this.requestId = requestId;
         this.securityIsin = securityIsin;

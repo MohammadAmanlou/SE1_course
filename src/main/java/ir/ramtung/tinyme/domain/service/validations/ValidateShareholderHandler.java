@@ -21,4 +21,3 @@ class ValidateShareholderHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

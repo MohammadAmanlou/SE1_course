@@ -20,4 +20,3 @@ class CheckAuctionStopLimitHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

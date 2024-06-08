@@ -15,9 +15,11 @@ public abstract class Event {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private final LocalDateTime time;
+
     public Event() {
         time = LocalDateTime.now();
     }
+
     public Event(LocalDateTime time) {
         this.time = time;
     }

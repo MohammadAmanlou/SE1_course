@@ -22,4 +22,3 @@ public class ValidateInvalidUpdatePeakSizeHandler extends ValidationHandler {
         super.handle(request, errors);
     }
 }
-

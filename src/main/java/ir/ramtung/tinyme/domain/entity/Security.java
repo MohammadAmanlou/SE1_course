@@ -53,11 +53,13 @@ public class Security {
         if (enterOrderRq.getPeakSize() == 0 && enterOrderRq.getStopPrice() == 0) {
             factory = new GenericOrderFactory();
             order = factory.createOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
-                    enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder, enterOrderRq.getEntryTime(), 
+                    enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
+                    enterOrderRq.getEntryTime(),
                     OrderStatus.NEW, enterOrderRq.getMinimumExecutionQuantity());
         } else if (enterOrderRq.getStopPrice() != 0) {
             factory = new StopLimitOrderFactory();
-            order = ((StopLimitOrderFactory) factory).createOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
+            order = ((StopLimitOrderFactory) factory).createOrder(enterOrderRq.getOrderId(), this,
+                    enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                     enterOrderRq.getEntryTime(), enterOrderRq.getStopPrice());
             order.setRequestId(enterOrderRq.getRequestId());
@@ -65,7 +67,8 @@ public class Security {
             factory = new IcebergOrderFactory();
             order = ((IcebergOrderFactory) factory).createOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
-                    enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(), OrderStatus.NEW, enterOrderRq.getMinimumExecutionQuantity());
+                    enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(), OrderStatus.NEW,
+                    enterOrderRq.getMinimumExecutionQuantity());
         }
         return order;
     }
@@ -156,13 +159,15 @@ public class Security {
     private boolean isLosesPriority(Order order, EnterOrderRq updateOrderRq) {
         return order.isQuantityIncreased(updateOrderRq.getQuantity())
                 || updateOrderRq.getPrice() != order.getPrice()
-                || ((order instanceof IcebergOrder icebergOrder) && (icebergOrder.getPeakSize() < updateOrderRq.getPeakSize()));
+                || ((order instanceof IcebergOrder icebergOrder)
+                        && (icebergOrder.getPeakSize() < updateOrderRq.getPeakSize()));
     }
 
     private boolean checkUpdateEnoughPosition(Order order, EnterOrderRq updateOrderRq) {
         return updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
-                        orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity());
+                        orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity()
+                                + updateOrderRq.getQuantity());
     }
 
     private MatchResult executeActiveOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq) {
@@ -175,7 +180,8 @@ public class Security {
         }
     }
 
-    private MatchResult removePrevOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, MatchResult matchResult) {
+    private MatchResult removePrevOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq,
+            MatchResult matchResult) {
         if (matchResult == null && updateOrderRq.getStopPrice() > 0) {
             orderBook.removeInActiveStopLimitByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
             if (!((StopLimitOrder) order).checkActivation(orderBook.getLastTradePrice())) {
@@ -197,7 +203,8 @@ public class Security {
         }
     }
 
-    private MatchResult execUpdatedOrder(MatchResult matchResult, Matcher matcher, Order order, Order originalOrder, EnterOrderRq updateOrderRq) {
+    private MatchResult execUpdatedOrder(MatchResult matchResult, Matcher matcher, Order order, Order originalOrder,
+            EnterOrderRq updateOrderRq) {
         if (matchResult == null && matchingState == MatchingState.CONTINUOUS) {
             matchResult = matcher.execute(order);
             enqueueUpdatedOrder(matchResult, originalOrder);
@@ -210,7 +217,8 @@ public class Security {
         }
     }
 
-    private MatchResult processUpdatedOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq, Matcher matcher) {
+    private MatchResult processUpdatedOrder(Order order, Order originalOrder, EnterOrderRq updateOrderRq,
+            Matcher matcher) {
         MatchResult matchResult = executeActiveOrder(order, originalOrder, updateOrderRq);
         matchResult = removePrevOrder(order, originalOrder, updateOrderRq, matchResult);
         matchResult = execUpdatedOrder(matchResult, matcher, order, originalOrder, updateOrderRq);
@@ -407,12 +415,12 @@ public class Security {
         return bestOpenPrices;
     }
 
-    public int findBestAuctionPrice(LinkedList <Integer> allOrdersPrices){
-        if (allOrdersPrices.size() != 0){
+    public int findBestAuctionPrice(LinkedList<Integer> allOrdersPrices) {
+        if (allOrdersPrices.size() != 0) {
             int minPrice = Collections.min(allOrdersPrices);
             int maxPrice = Collections.max(allOrdersPrices);
             LinkedList<Integer> bestOpenPrices = findCandidatePrices(minPrice, maxPrice);
-            return findClosestToLastTradePrice(bestOpenPrices );
+            return findClosestToLastTradePrice(bestOpenPrices);
         }
         return 0;
     }
@@ -421,20 +429,20 @@ public class Security {
         LinkedList<Integer> allOrdersPrices = gatherAllOrderPrices();
         return setIndicativeOpeningPrice(allOrdersPrices);
     }
-    
+
     private LinkedList<Integer> gatherAllOrderPrices() {
         LinkedList<Integer> allOrdersPrices = new LinkedList<>();
         gatherPricesFromQueue(orderBook.getBuyQueue(), allOrdersPrices);
         gatherPricesFromQueue(orderBook.getSellQueue(), allOrdersPrices);
         return allOrdersPrices;
     }
-    
+
     private void gatherPricesFromQueue(LinkedList<Order> queue, LinkedList<Integer> allOrdersPrices) {
         for (Order order : queue) {
             allOrdersPrices.add(order.getPrice());
         }
     }
-    
+
     private int setIndicativeOpeningPrice(LinkedList<Integer> allOrdersPrices) {
         int bestAuctionPrice = findBestAuctionPrice(allOrdersPrices);
         if (bestAuctionPrice == Integer.MAX_VALUE) {
@@ -445,4 +453,3 @@ public class Security {
     }
 
 }
-
