@@ -262,26 +262,23 @@ public class Security {
     }
 
     public MatchResult ChangeMatchStateRq(MatchingState state , Matcher matcher){
+        updateIndicativeOpeningPrice();
         if (state == MatchingState.CONTINUOUS &&  matchingState == MatchingState.AUCTION){
-            updateIndicativeOpeningPrice();
             MatchResult matchResult = openingProcess(matcher);
             matchingState =  MatchingState.CONTINUOUS ;
             return matchResult;
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.AUCTION){
-            updateIndicativeOpeningPrice();
             MatchResult matchResult = openingProcess(matcher);
             matchingState =  MatchingState.AUCTION ;
             return matchResult ;
 
         }
         else if (state == MatchingState.AUCTION &&  matchingState == MatchingState.CONTINUOUS){
-            updateIndicativeOpeningPrice();
             matchingState =  MatchingState.AUCTION ;
             return null;
         }
         else {
-            updateIndicativeOpeningPrice();
             matchingState =  MatchingState.CONTINUOUS ;
             return null;
         }
