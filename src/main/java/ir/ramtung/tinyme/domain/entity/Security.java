@@ -359,18 +359,31 @@ public class Security {
         return Math.abs(price - (int)orderBook.getLastTradePrice());
     }
 
+    private int updateMinDistance(int distance, int minDistance){
+        if(distance < minDistance){
+            minDistance = distance;
+        }
+        return minDistance;
+    }
+
+    private int updateMinElement(int distance, int minDistance, int price, int minElement){
+        if(distance < minDistance){
+            minElement = price;
+        }
+        else if (distance == minDistance && price < minElement){
+            minElement = price;
+        }
+        return minElement;
+    }
+
     private int findClosestToLastTradePrice(LinkedList<Integer> openPrices ){
         int minDistance = Integer.MAX_VALUE;
         int minElement = Integer.MAX_VALUE;
         for (int price : openPrices){
             int distance = findDistanceToLastTradePrice(price);
-            if(distance < minDistance){
-                minDistance = distance;
-                minElement = price;
-            }
-            else if (distance == minDistance && price < minElement){
-                minElement = price;
-            }
+            minElement = updateMinElement(distance, minDistance, price, minElement);
+            minDistance = updateMinDistance(distance, minDistance);
+            
         }
         return minElement;
     }
